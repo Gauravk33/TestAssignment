@@ -72,7 +72,7 @@ export const WorkspacePage: React.FC = () => {
           justifyContent: 'center', height: '100%', gap: '16px',
         }}>
           <div style={{ fontSize: '3rem' }}>📄</div>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff', margin: 0 }}>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>
             Select a page
           </h2>
           <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', textAlign: 'center', maxWidth: '300px' }}>
@@ -98,7 +98,7 @@ export const WorkspacePage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-main)' }}>
       {/* Offline banner */}
       {isOffline && (
         <div style={{
@@ -116,7 +116,7 @@ export const WorkspacePage: React.FC = () => {
       <header style={{
         height: '52px',
         borderBottom: '1px solid var(--border-subtle)',
-        background: 'rgba(11, 15, 25, 0.85)',
+        background: 'var(--bg-header)',
         backdropFilter: 'blur(12px)',
         display: 'flex',
         alignItems: 'center',
@@ -134,7 +134,7 @@ export const WorkspacePage: React.FC = () => {
           }}>
             <Layers size={16} color="#ffffff" />
           </div>
-          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>
+          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-heading)' }}>
             {currentWorkspace?.name || 'TeamSpace'}
           </span>
           <span className={`badge badge-${userRole}`} style={{
@@ -148,21 +148,21 @@ export const WorkspacePage: React.FC = () => {
         {activePage && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(255,255,255,0.04)',
+            background: 'var(--bg-card)',
             padding: '4px 12px', borderRadius: '6px',
             border: '1px solid var(--border-subtle)',
           }}>
             <span style={{ fontSize: '0.8rem' }}>
               {activePage.icon || (activePage.type === 'doc' ? '📝' : activePage.type === 'board' ? '📋' : '💬')}
             </span>
-            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-main)' }}>
               {activePage.title}
             </span>
             <span style={{
               fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase',
               padding: '1px 6px', borderRadius: '4px',
               background: activePage.type === 'doc' ? 'rgba(99,102,241,0.15)' : activePage.type === 'board' ? 'rgba(6,182,212,0.15)' : 'rgba(168,85,247,0.15)',
-              color: activePage.type === 'doc' ? '#a5b4fc' : activePage.type === 'board' ? '#67e8f9' : '#c084fc',
+              color: activePage.type === 'doc' ? '#6366f1' : activePage.type === 'board' ? '#0891b2' : '#9333ea',
             }}>
               {activePage.type}
             </span>
@@ -174,14 +174,14 @@ export const WorkspacePage: React.FC = () => {
           {/* Comments toggle */}
           {activePage && (
             <button
-              onClick={() => setShowComments(c => !c)}
+              onClick={() => setShowComments((c) => !c)}
               title="Toggle comments"
               style={{
                 width: '34px', height: '34px', borderRadius: '8px',
-                border: `1px solid ${showComments ? 'rgba(99,102,241,0.4)' : 'var(--border-subtle)'}`,
-                background: showComments ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${showComments ? 'var(--border-active)' : 'var(--border-subtle)'}`,
+                background: showComments ? 'var(--bg-item-active)' : 'var(--bg-card)',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: showComments ? '#a5b4fc' : 'var(--text-dim)',
+                color: showComments ? 'var(--primary)' : 'var(--text-muted)',
               }}
             >
               <MessageCircle size={15} />
@@ -200,7 +200,7 @@ export const WorkspacePage: React.FC = () => {
             }}>
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-main)' }}>
               {user?.name || 'User'}
             </span>
           </div>
@@ -211,9 +211,9 @@ export const WorkspacePage: React.FC = () => {
             style={{
               width: '34px', height: '34px', borderRadius: '8px',
               border: '1px solid var(--border-subtle)',
-              background: 'rgba(255,255,255,0.05)',
+              background: 'var(--bg-card)',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--text-dim)',
+              color: 'var(--text-muted)',
             }}
           >
             <LogOut size={15} />
@@ -227,7 +227,7 @@ export const WorkspacePage: React.FC = () => {
         <Sidebar workspaceId={workspaceId} />
 
         {/* Main content */}
-        <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)' }}>
           <ErrorBoundary>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {renderPageView()}

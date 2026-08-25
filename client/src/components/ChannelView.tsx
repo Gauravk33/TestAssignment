@@ -19,28 +19,28 @@ const MessageBubble: React.FC<{ msg: Message; isOwn: boolean }> = ({ msg, isOwn 
     <div style={{
       display: 'flex',
       gap: '10px',
-      padding: '6px 0',
+      padding: '8px 0',
       alignItems: 'flex-start',
     }}>
       <div style={{
-        width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
+        width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
         background: isOwn
           ? 'linear-gradient(135deg, #6366f1, #a855f7)'
           : 'linear-gradient(135deg, #06b6d4, #10b981)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '0.72rem', fontWeight: 700, color: '#fff',
+        fontSize: '0.75rem', fontWeight: 700, color: '#fff',
       }}>
         {initial}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: isOwn ? '#a5b4fc' : '#67e8f9' }}>
+          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: isOwn ? 'var(--primary)' : 'var(--text-heading)' }}>
             {name}
           </span>
           <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{time}</span>
         </div>
         <p style={{
-          margin: '2px 0 0', fontSize: '0.9rem', color: 'var(--text-muted)',
+          margin: '3px 0 0', fontSize: '0.9rem', color: 'var(--text-main)',
           lineHeight: '1.5', wordBreak: 'break-word',
         }}>
           {msg.content}
@@ -80,7 +80,7 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
     return () => { socket.off('channel:message', handler); };
   }, [pageId]);
 
-  // Auto-scroll to bottom on new messages (only for initial load and own sends)
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (isInitialLoad.current && messages.length > 0) {
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
@@ -94,7 +94,6 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
     setInput('');
     setSending(true);
 
-    // Optimistic append
     const optimisticMsg: Message = {
       _id: `temp-${Date.now()}`,
       id: `temp-${Date.now()}`,
@@ -115,14 +114,12 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
     }
   };
 
-  // Infinite scroll upward
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el || isLoadingMessages || !hasMoreMessages) return;
     if (el.scrollTop < 60) {
       const prevHeight = el.scrollHeight;
       fetchMessages(pageId, messageCursor || undefined).then(() => {
-        // Maintain scroll position after prepending older messages
         requestAnimationFrame(() => {
           if (el) el.scrollTop = el.scrollHeight - prevHeight;
         });
@@ -131,10 +128,10 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
   }, [isLoadingMessages, hasMoreMessages, messageCursor, pageId]);
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)' }}>
       {/* Channel header */}
-      <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)' }}>
-        <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', margin: 0 }}>
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-header)' }}>
+        <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-heading)', margin: 0 }}>
           💬 #{pageTitle}
         </h1>
         <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginTop: '2px' }}>
@@ -165,8 +162,9 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
             style={{
               alignSelf: 'center', display: 'flex', alignItems: 'center', gap: '6px',
               padding: '6px 14px', borderRadius: '999px', marginBottom: '12px',
-              background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)',
+              background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
               color: 'var(--text-dim)', fontSize: '0.78rem', cursor: 'pointer',
+              boxShadow: 'var(--shadow-card)',
             }}
           >
             <ArrowUp size={12} /> Load older messages
@@ -187,7 +185,7 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
 
         <div style={{ flex: 1 }} />
 
-        {messages.map(msg => (
+        {messages.map((msg) => (
           <MessageBubble
             key={msg._id || msg.id}
             msg={msg}
@@ -202,18 +200,19 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
       <div style={{
         padding: '12px 24px 16px',
         borderTop: '1px solid var(--border-subtle)',
-        background: 'rgba(13,18,30,0.5)',
+        background: 'var(--bg-input-bar)',
       }}>
         <div style={{
           display: 'flex', gap: '10px', alignItems: 'center',
           padding: '8px 12px', borderRadius: '10px',
-          background: 'rgba(255,255,255,0.04)',
+          background: 'var(--bg-input)',
           border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)',
         }}>
           <input
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder={`Message #${pageTitle}...`}
             style={{
               flex: 1, background: 'none', border: 'none', outline: 'none',
@@ -225,7 +224,7 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
             disabled={!input.trim() || sending}
             style={{
               width: '32px', height: '32px', borderRadius: '8px',
-              background: input.trim() ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+              background: input.trim() ? 'var(--primary)' : 'var(--bg-card)',
               border: 'none', cursor: input.trim() ? 'pointer' : 'default',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s',
@@ -238,4 +237,3 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
     </div>
   );
 };
-

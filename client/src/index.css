@@ -3,12 +3,27 @@
   --font-display: 'Outfit', 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
+  /* Dark Theme (Default) */
   --bg-main: #090d16;
-  --bg-card: rgba(18, 24, 38, 0.75);
-  --bg-card-hover: rgba(26, 34, 52, 0.85);
+  --bg-header: rgba(11, 15, 25, 0.85);
+  --bg-sidebar: rgba(13, 18, 30, 0.8);
+  --bg-card: rgba(22, 30, 48, 0.6);
+  --bg-card-hover: rgba(30, 41, 65, 0.75);
+  --bg-item-hover: rgba(255, 255, 255, 0.05);
+  --bg-item-active: rgba(99, 102, 241, 0.18);
   --bg-input: rgba(15, 21, 34, 0.8);
+  --bg-input-bar: rgba(13, 18, 30, 0.6);
+  --bg-panel: rgba(13, 18, 30, 0.9);
+  --bg-dropdown: #1a2235;
+
   --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(99, 102, 241, 0.4);
   --border-focus: rgba(99, 102, 241, 0.6);
+
+  --text-heading: #ffffff;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
 
   --primary: #6366f1;
   --primary-hover: #4f46e5;
@@ -21,27 +36,48 @@
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
 
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 24px;
+
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+  --bg-gradient: radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.10) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
 }
 
-.light {
+html.light, body.light, .light {
+  /* Light Theme (Crisp, Modern SaaS) */
   --bg-main: #f8fafc;
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --bg-card-hover: rgba(241, 245, 249, 0.9);
-  --bg-input: rgba(241, 245, 249, 0.9);
-  --border-subtle: rgba(0, 0, 0, 0.1);
+  --bg-header: rgba(255, 255, 255, 0.92);
+  --bg-sidebar: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-item-hover: rgba(0, 0, 0, 0.04);
+  --bg-item-active: rgba(99, 102, 241, 0.12);
+  --bg-input: #ffffff;
+  --bg-input-bar: rgba(248, 250, 252, 0.95);
+  --bg-panel: #ffffff;
+  --bg-dropdown: #ffffff;
+
+  --border-subtle: #e2e8f0;
+  --border-active: rgba(99, 102, 241, 0.5);
   --border-focus: rgba(99, 102, 241, 0.5);
+
+  --text-heading: #0f172a;
   --text-main: #1e293b;
   --text-muted: #475569;
-  --text-dim: #94a3b8;
-  --primary-glow: rgba(99, 102, 241, 0.2);
+  --text-dim: #64748b;
+
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: #6366f1;
+  --primary-glow: rgba(79, 70, 229, 0.2);
+
+  --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.08);
+  --bg-gradient: radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.04) 0%, transparent 40%);
 }
 
 * {
@@ -56,11 +92,9 @@ body {
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
-  background-image: 
-    radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
-    radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.10) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
+  background-image: var(--bg-gradient);
   background-attachment: fixed;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1, h2, h3, h4, .font-display {
@@ -74,11 +108,11 @@ h1, h2, h3, h4, .font-display {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-card);
 }
 
 .glass-card {
-  background: rgba(22, 30, 48, 0.6);
+  background: var(--bg-card);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -87,9 +121,9 @@ h1, h2, h3, h4, .font-display {
 
 .glass-card:hover {
   background: var(--bg-card-hover);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: var(--border-active);
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-card);
 }
 
 /* Glowing Elements */
@@ -145,7 +179,7 @@ h1, h2, h3, h4, .font-display {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-md);
@@ -155,13 +189,13 @@ h1, h2, h3, h4, .font-display {
   font-family: var(--font-sans);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 14px var(--primary-glow);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--primary-hover) 0%, #3730a3 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 6px 20px var(--primary-glow);
 }
 
 .btn-primary:disabled {
@@ -174,7 +208,7 @@ h1, h2, h3, h4, .font-display {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-card);
   color: var(--text-main);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -186,8 +220,8 @@ h1, h2, h3, h4, .font-display {
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--bg-card-hover);
+  border-color: var(--border-active);
 }
 
 /* Badges */
@@ -205,25 +239,25 @@ h1, h2, h3, h4, .font-display {
 
 .badge-owner {
   background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
+  color: #d97706;
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-admin {
   background: rgba(168, 85, 247, 0.15);
-  color: #c084fc;
+  color: #9333ea;
   border: 1px solid rgba(168, 85, 247, 0.3);
 }
 
 .badge-editor {
   background: rgba(6, 182, 212, 0.15);
-  color: #22d3ee;
+  color: #0891b2;
   border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
 .badge-viewer {
   background: rgba(148, 163, 184, 0.15);
-  color: #cbd5e1;
+  color: #64748b;
   border: 1px solid rgba(148, 163, 184, 0.3);
 }
 

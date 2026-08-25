@@ -50,21 +50,21 @@ const BlockEditor: React.FC<{
 
   const getStyle = (): React.CSSProperties => {
     switch (block.type) {
-      case 'heading1': return { fontSize: '1.8rem', fontWeight: 800, color: '#fff', lineHeight: 1.2 };
-      case 'heading2': return { fontSize: '1.35rem', fontWeight: 700, color: '#e5e7eb', lineHeight: 1.3 };
-      case 'heading3': return { fontSize: '1.1rem', fontWeight: 600, color: '#d1d5db', lineHeight: 1.4 };
+      case 'heading1': return { fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-heading)', lineHeight: 1.2 };
+      case 'heading2': return { fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-heading)', lineHeight: 1.3 };
+      case 'heading3': return { fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.4 };
       case 'code': return {
-        fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#86efac',
-        background: 'rgba(0,0,0,0.3)', padding: '12px 16px', borderRadius: '8px',
-        border: '1px solid rgba(255,255,255,0.08)',
+        fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#10b981',
+        background: 'var(--bg-input)', padding: '12px 16px', borderRadius: '8px',
+        border: '1px solid var(--border-subtle)',
       };
       case 'callout': return {
-        padding: '12px 16px', background: 'rgba(99,102,241,0.1)',
-        borderRadius: '8px', border: '1px solid rgba(99,102,241,0.25)',
-        color: '#a5b4fc', fontSize: '0.9rem',
+        padding: '12px 16px', background: 'rgba(99,102,241,0.08)',
+        borderRadius: '8px', border: '1px solid var(--border-active)',
+        color: 'var(--primary)', fontSize: '0.9rem',
       };
-      case 'bullet': return { color: 'var(--text-muted)', fontSize: '0.95rem' };
-      default: return { color: 'var(--text-muted)', fontSize: '0.95rem' };
+      case 'bullet': return { color: 'var(--text-main)', fontSize: '0.95rem' };
+      default: return { color: 'var(--text-main)', fontSize: '0.95rem' };
     }
   };
 
@@ -76,7 +76,7 @@ const BlockEditor: React.FC<{
     >
       {/* Bullet prefix */}
       {block.type === 'bullet' && (
-        <span style={{ color: 'var(--primary-light)', marginTop: '3px', minWidth: '16px' }}>•</span>
+        <span style={{ color: 'var(--primary)', marginTop: '3px', minWidth: '16px' }}>•</span>
       )}
 
       {/* Todo checkbox */}
@@ -84,7 +84,7 @@ const BlockEditor: React.FC<{
         <input
           type="checkbox"
           checked={checked}
-          onChange={e => handleCheck(e.target.checked)}
+          onChange={(e) => handleCheck(e.target.checked)}
           style={{ marginTop: '4px', minWidth: '16px', cursor: 'pointer', accentColor: 'var(--primary)' }}
         />
       )}
@@ -95,14 +95,14 @@ const BlockEditor: React.FC<{
           <textarea
             autoFocus
             value={text}
-            onChange={e => handleChange(e.target.value)}
+            onChange={(e) => handleChange(e.target.value)}
             onBlur={() => setEditing(false)}
             placeholder={`${block.type}...`}
             rows={block.type === 'code' ? 4 : 2}
             style={{
               width: '100%',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(99,102,241,0.4)',
+              background: 'var(--bg-input)',
+              border: '1px solid var(--border-active)',
               borderRadius: '6px',
               padding: '6px 10px',
               resize: 'vertical',
@@ -142,7 +142,7 @@ const BlockEditor: React.FC<{
             background: 'none', border: 'none', cursor: 'pointer',
             color: '#f87171', padding: '4px', borderRadius: '4px',
             display: 'flex', alignItems: 'center', marginTop: '2px',
-            opacity: 0.7,
+            opacity: 0.8,
           }}
         >
           <Trash2 size={13} />
@@ -203,7 +203,7 @@ export const DocView: React.FC<DocViewProps> = ({ pageId, pageTitle }) => {
   return (
     <div style={{ maxWidth: '720px', margin: '0 auto', padding: '40px 24px', height: '100%' }}>
       {/* Page title */}
-      <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: '32px', paddingBottom: '16px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-heading)', marginBottom: '32px', paddingBottom: '16px', borderBottom: '1px solid var(--border-subtle)' }}>
         📝 {pageTitle}
       </h1>
 
@@ -217,7 +217,7 @@ export const DocView: React.FC<DocViewProps> = ({ pageId, pageTitle }) => {
           blocks
             .slice()
             .sort((a, b) => a.position - b.position)
-            .map(block => (
+            .map((block) => (
               <BlockEditor
                 key={block._id || block.id}
                 block={block}
@@ -231,11 +231,11 @@ export const DocView: React.FC<DocViewProps> = ({ pageId, pageTitle }) => {
       {/* Add block button */}
       <div style={{ position: 'relative' }}>
         <button
-          onClick={() => setShowTypeMenu(x => !x)}
+          onClick={() => setShowTypeMenu((x) => !x)}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '8px 14px', borderRadius: '8px',
-            background: 'rgba(255,255,255,0.04)',
+            background: 'var(--bg-card)',
             border: '1px dashed var(--border-subtle)',
             color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.85rem',
           }}
@@ -246,11 +246,11 @@ export const DocView: React.FC<DocViewProps> = ({ pageId, pageTitle }) => {
         {showTypeMenu && (
           <div style={{
             position: 'absolute', top: '100%', left: 0, zIndex: 50,
-            background: '#1a2235', border: '1px solid var(--border-subtle)',
+            background: 'var(--bg-dropdown)', border: '1px solid var(--border-subtle)',
             borderRadius: '10px', padding: '6px', minWidth: '200px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)', marginTop: '4px',
+            boxShadow: 'var(--shadow-card)', marginTop: '4px',
           }}>
-            {BLOCK_TYPES.map(type => (
+            {BLOCK_TYPES.map((type) => (
               <button
                 key={type}
                 onClick={() => handleAddBlock(type)}
@@ -258,10 +258,10 @@ export const DocView: React.FC<DocViewProps> = ({ pageId, pageTitle }) => {
                   display: 'flex', alignItems: 'center', gap: '10px',
                   width: '100%', padding: '8px 12px', borderRadius: '6px',
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'left',
+                  color: 'var(--text-main)', fontSize: '0.85rem', textAlign: 'left',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-item-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
               >
                 {BLOCK_TYPE_ICONS[type] || <Type size={14} />}
                 <span style={{ textTransform: 'capitalize' }}>{type}</span>

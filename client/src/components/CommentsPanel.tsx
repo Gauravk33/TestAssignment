@@ -63,7 +63,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({ targetType, target
     <div style={{
       width: '300px', minWidth: '300px',
       borderLeft: '1px solid var(--border-subtle)',
-      background: 'rgba(13,18,30,0.8)',
+      background: 'var(--bg-panel)',
       display: 'flex', flexDirection: 'column',
       height: '100%',
     }}>
@@ -72,14 +72,15 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({ targetType, target
         padding: '12px 16px',
         borderBottom: '1px solid var(--border-subtle)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'var(--bg-header)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <MessageCircle size={16} color="var(--primary-light)" />
-          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>Comments</span>
+          <MessageCircle size={16} color="var(--primary)" />
+          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-heading)' }}>Comments</span>
           <span style={{
             fontSize: '0.7rem', fontWeight: 600, padding: '1px 6px',
-            borderRadius: '999px', background: 'rgba(99,102,241,0.2)',
-            color: '#a5b4fc',
+            borderRadius: '999px', background: 'rgba(99,102,241,0.15)',
+            color: 'var(--primary)',
           }}>
             {comments.length}
           </span>
@@ -107,7 +108,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({ targetType, target
             No comments yet.
           </div>
         ) : (
-          comments.map(comment => {
+          comments.map((comment) => {
             const commenter = typeof comment.userId === 'object' ? comment.userId : null;
             const name = commenter?.name || 'Unknown';
             const time = new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -117,7 +118,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({ targetType, target
             return (
               <div key={comment._id} style={{
                 padding: '10px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                borderBottom: '1px solid var(--border-subtle)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <div style={{
@@ -130,13 +131,13 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({ targetType, target
                   }}>
                     {name.charAt(0).toUpperCase()}
                   </div>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: isOwn ? '#a5b4fc' : '#67e8f9' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: isOwn ? 'var(--primary)' : 'var(--text-heading)' }}>
                     {name}
                   </span>
                   <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>{date} {time}</span>
                 </div>
                 <p style={{
-                  margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)',
+                  margin: 0, fontSize: '0.82rem', color: 'var(--text-main)',
                   lineHeight: '1.4', paddingLeft: '30px',
                 }}>
                   {comment.content}
@@ -148,17 +149,18 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({ targetType, target
       </div>
 
       {/* Input */}
-      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-subtle)' }}>
+      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-input-bar)' }}>
         <div style={{
           display: 'flex', gap: '8px', alignItems: 'center',
           padding: '6px 10px', borderRadius: '8px',
-          background: 'rgba(255,255,255,0.04)',
+          background: 'var(--bg-input)',
           border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)',
         }}>
           <input
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Write a comment..."
             style={{
               flex: 1, background: 'none', border: 'none', outline: 'none',

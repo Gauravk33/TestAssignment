@@ -56,9 +56,9 @@ const PageTreeItem: React.FC<{
           borderRadius: '6px',
           cursor: 'pointer',
           background: isActive
-            ? 'rgba(99, 102, 241, 0.15)'
-            : hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
-          border: isActive ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+            ? 'var(--bg-item-active)'
+            : hovered ? 'var(--bg-item-hover)' : 'transparent',
+          border: isActive ? '1px solid var(--border-active)' : '1px solid transparent',
           transition: 'all 0.15s',
           userSelect: 'none',
         }}
@@ -66,7 +66,7 @@ const PageTreeItem: React.FC<{
       >
         {hasChildren ? (
           <span
-            onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
+            onClick={(e) => { e.stopPropagation(); setExpanded((x) => !x); }}
             style={{ color: 'var(--text-dim)', display: 'flex', alignItems: 'center' }}
           >
             {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -80,7 +80,7 @@ const PageTreeItem: React.FC<{
         <span style={{
           fontSize: '0.85rem',
           fontWeight: isActive ? 600 : 400,
-          color: isActive ? '#ffffff' : 'var(--text-muted)',
+          color: isActive ? 'var(--primary)' : 'var(--text-main)',
           flex: 1,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -102,7 +102,7 @@ const PageTreeItem: React.FC<{
 
       {hasChildren && expanded && (
         <div>
-          {page.children!.map(child => (
+          {page.children!.map((child) => (
             <PageTreeItem
               key={child._id || child.id}
               page={child}
@@ -133,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
 
   useEffect(() => {
     api.get(`/workspaces/${workspaceId}`)
-      .then(r => setMembers(r.data?.data?.members || r.data?.members || []))
+      .then((r) => setMembers(r.data?.data?.members || r.data?.members || []))
       .catch(() => {});
   }, [workspaceId]);
 
@@ -150,43 +150,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
     await deletePage(pageId);
   };
 
-  const flatPages = (pages: Page[]): Page[] =>
-    pages.flatMap(p => [p, ...(p.children ? flatPages(p.children) : [])]);
-
   return (
     <aside style={{
       width: '240px',
       minWidth: '240px',
       borderRight: '1px solid var(--border-subtle)',
-      background: 'rgba(13, 18, 30, 0.7)',
+      background: 'var(--bg-sidebar)',
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
       overflow: 'hidden',
+      transition: 'background 0.2s ease',
     }}>
       {/* Workspace Switcher */}
       <div style={{ padding: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
         <select
           value={currentWorkspace?.id || ''}
-          onChange={e => {
-            const ws = workspaces.find(w => w.id === e.target.value);
+          onChange={(e) => {
+            const ws = workspaces.find((w) => w.id === e.target.value);
             if (ws) setCurrentWorkspace(ws);
           }}
           style={{
             width: '100%',
             padding: '6px 8px',
             borderRadius: '6px',
-            background: 'rgba(255,255,255,0.05)',
+            background: 'var(--bg-card)',
             border: '1px solid var(--border-subtle)',
-            color: 'var(--text-main)',
+            color: 'var(--text-heading)',
             fontSize: '0.85rem',
             fontWeight: 600,
             cursor: 'pointer',
             outline: 'none',
           }}
         >
-          {workspaces.map(ws => (
-            <option key={ws.id} value={ws.id} style={{ background: '#1a2235' }}>
+          {workspaces.map((ws) => (
+            <option key={ws.id} value={ws.id} style={{ background: 'var(--bg-dropdown)', color: 'var(--text-main)' }}>
               {ws.icon ? `${ws.icon} ` : ''}{ws.name}
             </option>
           ))}
@@ -203,7 +201,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
             Pages
           </span>
           <button
-            onClick={() => setShowNewPage(x => !x)}
+            onClick={() => setShowNewPage((x) => !x)}
             title="New page"
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
@@ -217,31 +215,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
 
         {/* New page form */}
         {showNewPage && (
-          <div style={{ padding: '8px', marginBottom: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+          <div style={{ padding: '8px', marginBottom: '8px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
             <input
               autoFocus
               value={newPageTitle}
-              onChange={e => setNewPageTitle(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreatePage()}
+              onChange={(e) => setNewPageTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreatePage()}
               placeholder="Page title..."
               style={{
                 width: '100%', padding: '6px 8px', borderRadius: '6px',
-                background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
+                background: 'var(--bg-input)', border: '1px solid var(--border-subtle)',
                 color: 'var(--text-main)', fontSize: '0.82rem', marginBottom: '8px',
                 outline: 'none', boxSizing: 'border-box',
               }}
             />
             <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-              {(['doc', 'board', 'channel'] as const).map(t => (
+              {(['doc', 'board', 'channel'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setNewPageType(t)}
                   style={{
                     flex: 1, padding: '4px', borderRadius: '6px', fontSize: '0.75rem',
                     cursor: 'pointer', fontWeight: newPageType === t ? 700 : 400,
-                    background: newPageType === t ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-                    border: newPageType === t ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent',
-                    color: newPageType === t ? '#a5b4fc' : 'var(--text-dim)',
+                    background: newPageType === t ? 'var(--bg-item-active)' : 'var(--bg-card)',
+                    border: newPageType === t ? '1px solid var(--border-active)' : '1px solid transparent',
+                    color: newPageType === t ? 'var(--primary)' : 'var(--text-dim)',
                   }}
                 >
                   {PAGE_ICONS[t]} {t}
@@ -252,7 +250,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
               onClick={handleCreatePage}
               style={{
                 width: '100%', padding: '6px', borderRadius: '6px',
-                background: 'rgba(99,102,241,0.7)', border: 'none',
+                background: 'var(--primary)', border: 'none',
                 color: '#fff', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
               }}
             >
@@ -271,7 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
           </div>
         ) : (
           <div>
-            {pageTree.map(page => (
+            {pageTree.map((page) => (
               <PageTreeItem
                 key={page._id || page.id}
                 page={page}
@@ -288,7 +286,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
       {/* Members Section */}
       <div style={{ borderTop: '1px solid var(--border-subtle)', padding: '8px' }}>
         <button
-          onClick={() => setShowMembers(x => !x)}
+          onClick={() => setShowMembers((x) => !x)}
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
             padding: '7px 8px', background: 'none', border: 'none',
@@ -312,16 +310,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
                 }}>
                   {(m.user?.name || 'U').charAt(0).toUpperCase()}
                 </div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flex: 1 }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-main)', flex: 1 }}>
                   {m.user?.name || 'Unknown'}
                 </span>
-                <span style={{
-                  fontSize: '0.65rem', fontWeight: 600, padding: '1px 6px',
-                  borderRadius: '999px', textTransform: 'uppercase',
-                  background: m.role === 'owner' ? 'rgba(168,85,247,0.2)' : 'rgba(99,102,241,0.15)',
-                  color: m.role === 'owner' ? '#c084fc' : '#a5b4fc',
-                  border: m.role === 'owner' ? '1px solid rgba(168,85,247,0.3)' : '1px solid rgba(99,102,241,0.25)',
-                }}>
+                <span className={`badge badge-${m.role}`}>
                   {m.role}
                 </span>
               </div>

@@ -1,28 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore.js';
-import { api } from '../lib/api.js';
+import { usePageStore } from '../store/pageStore.js';
+import { Sidebar } from '../components/Sidebar.js';
+import { DocView } from '../components/DocView.js';
+import { BoardView } from '../components/BoardView.js';
+import { ChannelView } from '../components/ChannelView.js';
+import { CommentsPanel } from '../components/CommentsPanel.js';
+import { ErrorBoundary } from '../components/ErrorBoundary.js';
+import { DarkModeToggle } from '../components/DarkModeToggle.js';
+import { connectSocket, disconnectSocket, joinWorkspace, joinPage } from '../lib/socket.js';
 import {
   Layers,
   LogOut,
-  ShieldCheck,
-  FileText,
-  Trello,
-  MessageSquare,
-  CheckCircle2,
-  Sparkles,
-  Database,
-  KeyRound,
-  RefreshCw,
+  MessageCircle,
+  WifiOff,
 } from 'lucide-react';
 
 export const WorkspacePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, workspaces, currentWorkspace, setCurrentWorkspace, logout } = useAuthStore();
-  const [rbacTestResult, setRbacTestResult] = useState<any>(null);
-  const [isTestingRbac, setIsTestingRbac] = useState(false);
-  const [healthInfo, setHealthInfo] = useState<any>(null);
+  const { user, workspaces, currentWorkspace, setCurrentWorkspace, logout, token } = useAuthStore();
+  const { activePage, isOffline } = usePageStore();
+  const [showComments, setShowComments] = useState(false);
 
   useEffect(() => {
     if (id && workspaces.length > 0) {
@@ -33,293 +33,217 @@ export const WorkspacePage: React.FC = () => {
     }
   }, [id, workspaces, setCurrentWorkspace]);
 
+  // Connect Socket.io when workspace loads
   useEffect(() => {
-    // Fetch system health
-    api.get('/health')
-      .then((res) => setHealthInfo(res.data))
-      .catch((err) => console.error('Health fetch error:', err));
-  }, []);
+    if (token && id) {
+      const socket = connectSocket(token);
+      socket.on('connect', () => {
+        console.log('[Socket] Connected, joining workspace:', id);
+        joinWorkspace(id);
+      });
+    }
+    return () => {
+      disconnectSocket();
+    };
+  }, [token, id]);
+
+  // Join page room when active page changes
+  useEffect(() => {
+    if (activePage) {
+      const pid = activePage._id || activePage.id;
+      joinPage(pid);
+    }
+  }, [activePage]);
 
   const handleLogout = async () => {
+    disconnectSocket();
     await logout();
     navigate('/login', { replace: true });
   };
 
-  const handleTestRbac = async () => {
-    if (!currentWorkspace?.id) return;
-    setIsTestingRbac(true);
-    try {
-      const res = await api.get(`/workspaces/${currentWorkspace.id}/test-role`);
-      setRbacTestResult({ success: true, data: res.data });
-    } catch (err: any) {
-      setRbacTestResult({
-        success: false,
-        error: err.response?.data?.error || err.message || 'RBAC verification failed',
-      });
-    } finally {
-      setIsTestingRbac(false);
+  const userRole = currentWorkspace?.role || 'owner';
+  const workspaceId = id || currentWorkspace?.id || '';
+
+  const renderPageView = () => {
+    if (!activePage) {
+      return (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', height: '100%', gap: '16px',
+        }}>
+          <div style={{ fontSize: '3rem' }}>📄</div>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff', margin: 0 }}>
+            Select a page
+          </h2>
+          <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', textAlign: 'center', maxWidth: '300px' }}>
+            Choose a page from the sidebar, or create a new doc, board, or channel to get started.
+          </p>
+        </div>
+      );
+    }
+
+    const pid = activePage._id || activePage.id;
+    const ptitle = activePage.title;
+
+    switch (activePage.type) {
+      case 'doc':
+        return <DocView pageId={pid} pageTitle={ptitle} />;
+      case 'board':
+        return <BoardView pageId={pid} pageTitle={ptitle} />;
+      case 'channel':
+        return <ChannelView pageId={pid} pageTitle={ptitle} />;
+      default:
+        return <DocView pageId={pid} pageTitle={ptitle} />;
     }
   };
 
-  const userRole = currentWorkspace?.role || 'owner';
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      {/* Offline banner */}
+      {isOffline && (
+        <div style={{
+          background: 'rgba(234,179,8,0.15)', borderBottom: '1px solid rgba(234,179,8,0.3)',
+          padding: '6px 24px', display: 'flex', alignItems: 'center', gap: '8px',
+        }}>
+          <WifiOff size={14} color="#eab308" />
+          <span style={{ fontSize: '0.8rem', color: '#eab308', fontWeight: 600 }}>
+            Offline — showing cached data
+          </span>
+        </div>
+      )}
+
       {/* Top Navbar */}
       <header style={{
-        height: '60px',
+        height: '52px',
         borderBottom: '1px solid var(--border-subtle)',
-        background: 'rgba(11, 15, 25, 0.8)',
+        background: 'rgba(11, 15, 25, 0.85)',
         backdropFilter: 'blur(12px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 24px',
+        padding: '0 20px',
         zIndex: 10,
       }}>
-        {/* Workspace Brand & Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '34px',
-            height: '34px',
-            borderRadius: '8px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '30px', height: '30px', borderRadius: '7px',
             background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-            boxShadow: '0 0 12px var(--primary-glow)',
+            boxShadow: '0 0 10px var(--primary-glow)',
           }}>
-            <Layers size={18} color="#ffffff" />
+            <Layers size={16} color="#ffffff" />
           </div>
-
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 700, fontSize: '1rem', color: '#ffffff' }}>
-                {currentWorkspace?.name || 'My Workspace'}
-              </span>
-              <span className={`badge badge-${userRole}`}>
-                {userRole}
-              </span>
-            </div>
-          </div>
+          <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>
+            {currentWorkspace?.name || 'TeamSpace'}
+          </span>
+          <span className={`badge badge-${userRole}`} style={{
+            fontSize: '0.65rem', padding: '1px 8px', borderRadius: '999px', fontWeight: 600,
+          }}>
+            {userRole}
+          </span>
         </div>
 
-        {/* User Profile & Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Page title indicator */}
+        {activePage && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(255,255,255,0.04)',
+            padding: '4px 12px', borderRadius: '6px',
+            border: '1px solid var(--border-subtle)',
+          }}>
+            <span style={{ fontSize: '0.8rem' }}>
+              {activePage.icon || (activePage.type === 'doc' ? '📝' : activePage.type === 'board' ? '📋' : '💬')}
+            </span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+              {activePage.title}
+            </span>
+            <span style={{
+              fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase',
+              padding: '1px 6px', borderRadius: '4px',
+              background: activePage.type === 'doc' ? 'rgba(99,102,241,0.15)' : activePage.type === 'board' ? 'rgba(6,182,212,0.15)' : 'rgba(168,85,247,0.15)',
+              color: activePage.type === 'doc' ? '#a5b4fc' : activePage.type === 'board' ? '#67e8f9' : '#c084fc',
+            }}>
+              {activePage.type}
+            </span>
+          </div>
+        )}
+
+        {/* User + actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Comments toggle */}
+          {activePage && (
+            <button
+              onClick={() => setShowComments(c => !c)}
+              title="Toggle comments"
+              style={{
+                width: '34px', height: '34px', borderRadius: '8px',
+                border: `1px solid ${showComments ? 'rgba(99,102,241,0.4)' : 'var(--border-subtle)'}`,
+                background: showComments ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.05)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: showComments ? '#a5b4fc' : 'var(--text-dim)',
+              }}
+            >
+              <MessageCircle size={15} />
+            </button>
+          )}
+
+          <DarkModeToggle />
+
+          {/* User avatar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '50%',
+              width: '30px', height: '30px', borderRadius: '50%',
               background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              color: '#ffffff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 600, fontSize: '0.8rem', color: '#ffffff',
             }}>
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                {user?.name || 'User'}
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                {user?.email}
-              </span>
-            </div>
+            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+              {user?.name || 'User'}
+            </span>
           </div>
 
           <button
             onClick={handleLogout}
-            id="btn-logout"
-            className="btn-secondary"
-            style={{ padding: '7px 12px', fontSize: '0.82rem' }}
-            title="Log out of TeamSpace"
+            title="Logout"
+            style={{
+              width: '34px', height: '34px', borderRadius: '8px',
+              border: '1px solid var(--border-subtle)',
+              background: 'rgba(255,255,255,0.05)',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--text-dim)',
+            }}
           >
             <LogOut size={15} />
-            <span>Logout</span>
           </button>
         </div>
       </header>
 
-      {/* Workspace Body */}
+      {/* Main layout */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left Sidebar */}
-        <aside style={{
-          width: '260px',
-          borderRight: '1px solid var(--border-subtle)',
-          background: 'rgba(15, 21, 34, 0.5)',
-          padding: '20px 14px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-        }}>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px', paddingLeft: '8px' }}>
-              Workspace Views (Day 1-2)
+        {/* Sidebar */}
+        <Sidebar workspaceId={workspaceId} />
+
+        {/* Main content */}
+        <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <ErrorBoundary>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {renderPageView()}
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div className="glass-card" style={{ padding: '9px 12px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', cursor: 'default' }}>
-                <FileText size={16} color="var(--primary-light)" />
-                <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>Notion Docs</span>
-                <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-dim)' }}>Day 1</span>
-              </div>
-
-              <div className="glass-card" style={{ padding: '9px 12px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', cursor: 'default' }}>
-                <Trello size={16} color="var(--accent-cyan)" />
-                <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>Trello Boards</span>
-                <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-dim)' }}>Day 1</span>
-              </div>
-
-              <div className="glass-card" style={{ padding: '9px 12px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', cursor: 'default' }}>
-                <MessageSquare size={16} color="var(--accent-purple)" />
-                <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>Slack Channels</span>
-                <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-dim)' }}>Day 1</span>
-              </div>
-            </div>
-          </div>
-
-          {/* System Status Pill */}
-          <div style={{
-            padding: '12px',
-            borderRadius: 'var(--radius-md)',
-            background: 'rgba(16, 185, 129, 0.08)',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} className="animate-pulse" />
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#34d399' }}>Auth & API Active</span>
-            </div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-              JWT Access + httpOnly Refresh Token active
-            </p>
-          </div>
-        </aside>
-
-        {/* Main Content Area */}
-        <main style={{ flex: 1, overflowY: 'auto', padding: '36px' }}>
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            {/* Day 0 Milestone Banner */}
-            <div className="glass-panel glow-primary" style={{ padding: '32px', marginBottom: '28px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px' }}>
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', marginBottom: '12px' }}>
-                    <Sparkles size={14} color="#818cf8" />
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#818cf8' }}>DAY 0 COMPLETE</span>
-                  </div>
-                  <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
-                    Setup & Authentication Skeleton Ready
-                  </h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                    You have successfully registered, obtained a short-lived JWT access token and rotated refresh token cookie, and booted the workspace environment.
-                  </p>
-                </div>
-              </div>
-
-              {/* Status Grid */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '14px',
-                marginTop: '24px',
-              }}>
-                <div className="glass-card" style={{ padding: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-emerald)', marginBottom: '6px' }}>
-                    <KeyRound size={18} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>JWT Auth</span>
-                  </div>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Verified & Bearer active</p>
-                </div>
-
-                <div className="glass-card" style={{ padding: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)', marginBottom: '6px' }}>
-                    <RefreshCw size={18} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Silent Refresh</span>
-                  </div>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>7-day httpOnly cookie</p>
-                </div>
-
-                <div className="glass-card" style={{ padding: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-cyan)', marginBottom: '6px' }}>
-                    <Database size={18} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Database</span>
-                  </div>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    {healthInfo?.services?.database?.status || 'Connected'}
-                  </p>
-                </div>
-
-                <div className="glass-card" style={{ padding: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24', marginBottom: '6px' }}>
-                    <ShieldCheck size={18} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>RBAC Model</span>
-                  </div>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Role: {userRole}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* RBAC Middleware Interactive Verifier */}
-            <div className="glass-panel" style={{ padding: '28px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#ffffff' }}>
-                    RBAC Middleware Verification
-                  </h3>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Test the backend <code>requireRole(['owner', 'admin'])</code> middleware for workspace <code>{currentWorkspace?.id}</code>
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleTestRbac}
-                  id="btn-test-rbac"
-                  disabled={isTestingRbac}
-                  className="btn-primary"
-                  style={{ padding: '9px 16px', fontSize: '0.88rem' }}
-                >
-                  <ShieldCheck size={16} />
-                  <span>{isTestingRbac ? 'Verifying...' : 'Test RBAC Middleware'}</span>
-                </button>
-              </div>
-
-              {rbacTestResult && (
-                <div style={{
-                  marginTop: '16px',
-                  padding: '16px',
-                  borderRadius: 'var(--radius-md)',
-                  background: rbacTestResult.success ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-                  border: `1px solid ${rbacTestResult.success ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    {rbacTestResult.success ? (
-                      <CheckCircle2 size={18} color="#34d399" />
-                    ) : (
-                      <ShieldCheck size={18} color="#f43f5e" />
-                    )}
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: rbacTestResult.success ? '#34d399' : '#f43f5e' }}>
-                      {rbacTestResult.success ? 'RBAC Check Passed (200 OK)' : 'RBAC Check Failed'}
-                    </span>
-                  </div>
-                  <pre style={{
-                    fontSize: '0.78rem',
-                    fontFamily: 'var(--font-mono)',
-                    color: 'var(--text-muted)',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    padding: '10px',
-                    borderRadius: 'var(--radius-sm)',
-                    overflowX: 'auto',
-                  }}>
-                    {JSON.stringify(rbacTestResult.data || rbacTestResult.error, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          </div>
+          </ErrorBoundary>
         </main>
+
+        {/* Comments Panel */}
+        {showComments && activePage && (
+          <CommentsPanel
+            targetType="page"
+            targetId={activePage._id || activePage.id}
+            workspaceId={workspaceId}
+            onClose={() => setShowComments(false)}
+          />
+        )}
       </div>
     </div>
   );

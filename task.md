@@ -11,34 +11,34 @@ Check items off as you go. Each day ends with a **"Definition of Done"** — if 
 **Goal: `docker compose up` works, and you can register/login/refresh a JWT.**
 
 ### Repo & Infra
-- [ ] Init repo, push empty commit (`chore: init repo`)
-- [ ] Create folder structure: `/api`, `/client`, `/docs`
-- [ ] `docker-compose.yml` with services: `api`, `client`, `mongo`, `redis` (even if api/client are empty shells)
-- [ ] Confirm `docker compose up` boots all 4 containers without crashing
-- [ ] Commit: `chore: docker compose skeleton boots`
+- [x] Init repo, push empty commit (`chore: init repo`)
+- [x] Create folder structure: `/api`, `/client`, `/docs`
+- [x] `docker-compose.yml` with services: `api`, `client`, `mongo`, `redis` (even if api/client are empty shells)
+- [x] Confirm `docker compose up` boots all 4 containers without crashing
+- [x] Commit: `chore: docker compose skeleton boots`
 
 ### Backend Foundation
-- [ ] Express/Fastify app skeleton, `/health` endpoint
-- [ ] Mongoose connection to Mongo container
-- [ ] Folder structure inside `/api`: `models/`, `routes/`, `controllers/`, `services/`, `middleware/`, `config/`
-- [ ] Models: `User`, `Workspace`, `Membership` (role: owner/admin/editor/viewer)
-- [ ] Commit: `feat: base models + db connection`
+- [x] Express/Fastify app skeleton, `/health` endpoint
+- [x] Mongoose connection to Mongo container
+- [x] Folder structure inside `/api`: `models/`, `routes/`, `controllers/`, `services/`, `middleware/`, `config/`
+- [x] Models: `User`, `Workspace`, `Membership` (role: owner/admin/editor/viewer)
+- [x] Commit: `feat: base models + db connection`
 
 ### Auth (JWT + Refresh + RBAC)
-- [ ] `POST /auth/register`
-- [ ] `POST /auth/login` → access token (short-lived) + refresh token (httpOnly cookie or long-lived JWT)
-- [ ] `POST /auth/refresh`
-- [ ] `POST /auth/logout`
-- [ ] Middleware: `requireAuth` (verifies JWT)
-- [ ] Middleware: `requireRole(workspaceId, [roles])` (RBAC check via Membership)
-- [ ] Commit: `feat: JWT auth + refresh tokens + RBAC middleware`
+- [x] `POST /auth/register`
+- [x] `POST /auth/login` → access token (short-lived) + refresh token (httpOnly cookie or long-lived JWT)
+- [x] `POST /auth/refresh`
+- [x] `POST /auth/logout`
+- [x] Middleware: `requireAuth` (verifies JWT)
+- [x] Middleware: `requireRole(workspaceId, [roles])` (RBAC check via Membership)
+- [x] Commit: `feat: JWT auth + refresh tokens + RBAC middleware`
 
 ### Frontend Skeleton
-- [ ] Vite + React app boots inside Docker
-- [ ] React Router set up: `/login`, `/register`, `/workspace/:id`
-- [ ] Zustand (or RTK) auth store: token, user, login/logout actions
-- [ ] Login/Register forms using React Hook Form
-- [ ] Commit: `feat: frontend auth pages + routing`
+- [x] Vite + React app boots inside Docker
+- [x] React Router set up: `/login`, `/register`, `/workspace/:id`
+- [x] Zustand (or RTK) auth store: token, user, login/logout actions
+- [x] Login/Register forms using React Hook Form
+- [x] Commit: `feat: frontend auth pages + routing`
 
 **✅ Definition of Done (Day 0):** You can register a user via the UI, log in, get redirected, and refresh token silently works. `docker compose up` is one command away from a working app.
 

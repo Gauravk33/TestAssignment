@@ -8,10 +8,10 @@ export async function initRedis(): Promise<Redis> {
   try {
     console.log(`[Redis] Connecting to Redis at: ${env.REDIS_URI.replace(/\/\/.*@/, '//<credentials>@')}`);
     const client = new Redis(env.REDIS_URI, {
-      maxRetriesPerRequest: 1,
-      connectTimeout: 3000,
+      maxRetriesPerRequest: null, // BullMQ strictly requires maxRetriesPerRequest: null
+      connectTimeout: 5000,
       retryStrategy(times) {
-        if (times > 2) return null; // stop retrying after 2 attempts to allow mock fallback
+        if (times > 3) return null;
         return 500;
       },
       lazyConnect: true,
@@ -37,6 +37,13 @@ export function getRedisClient(): Redis {
     const RedisMock = require('ioredis-mock');
     redisClient = new RedisMock();
     isRedisMock = true;
+  }
+  return redisClient;
+}
+
+export function getBullMQConnection(): any {
+  if (isRedisMock || !redisClient) {
+    return getRedisClient();
   }
   return redisClient;
 }

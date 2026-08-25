@@ -1,6 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import { Types } from 'mongoose';
-import { getRedisClient } from '../config/redis.js';
+import { getBullMQConnection } from '../config/redis.js';
 import { DIGEST_QUEUE_NAME } from './digest.queue.js';
 import { DigestLog } from '../models/DigestLog.js';
 import { Card } from '../models/Card.js';
@@ -13,7 +13,7 @@ let digestWorker: Worker | null = null;
 export function initDigestWorker(): Worker {
   if (digestWorker) return digestWorker;
 
-  const redis = getRedisClient();
+  const connection = getBullMQConnection();
 
   digestWorker = new Worker(
     DIGEST_QUEUE_NAME,
@@ -59,7 +59,7 @@ export function initDigestWorker(): Worker {
       }
     },
     {
-      connection: redis as any,
+      connection,
       concurrency: 2,
     }
   );

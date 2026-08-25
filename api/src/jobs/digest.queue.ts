@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { getRedisClient } from '../config/redis.js';
+import { getBullMQConnection } from '../config/redis.js';
 
 export const DIGEST_QUEUE_NAME = 'weekly-digest';
 
@@ -7,9 +7,9 @@ let digestQueue: Queue | null = null;
 
 export function getDigestQueue(): Queue {
   if (!digestQueue) {
-    const redis = getRedisClient();
+    const connection = getBullMQConnection();
     digestQueue = new Queue(DIGEST_QUEUE_NAME, {
-      connection: redis as any,
+      connection,
     });
   }
   return digestQueue;

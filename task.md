@@ -45,41 +45,41 @@ Check items off as you go. Each day ends with a **"Definition of Done"** — if 
 ---
 
 ## DAY 1 — Wednesday (All Backend Core APIs)
-**Goal: 35-40 endpoints exist and work via Postman/Swagger. This is your heaviest day.**
+**Goal: 35-40 endpoints exist and should be working. This is your heaviest day.**
 
 ### Morning Block: Workspace + Page
-- [ ] Workspace: `POST /workspaces`, `GET /workspaces`, `GET /workspaces/:id`, `PATCH /workspaces/:id`, `DELETE /workspaces/:id`
-- [ ] Membership: `POST /workspaces/:id/invite`, `PATCH /workspaces/:id/members/:userId` (change role)
-- [ ] Page model (type: doc/board/channel, parentId for nesting)
-- [ ] Page: `POST /pages`, `GET /pages/:id`, `GET /pages/tree?workspaceId=`, `PATCH /pages/:id`, `DELETE /pages/:id`, `PATCH /pages/:id/move` (change parent)
-- [ ] Commit after each resource works: `feat: workspace CRUD`, `feat: page CRUD + tree`
+- [x] Workspace: `POST /workspaces`, `GET /workspaces`, `GET /workspaces/:id`, `PATCH /workspaces/:id`, `DELETE /workspaces/:id`
+- [x] Membership: `POST /workspaces/:id/invite`, `PATCH /workspaces/:id/members/:userId` (change role)
+- [x] Page model (type: doc/board/channel, parentId for nesting)
+- [x] Page: `POST /pages`, `GET /pages/:id`, `GET /pages/tree?workspaceId=`, `PATCH /pages/:id`, `DELETE /pages/:id`, `PATCH /pages/:id/move` (change parent)
+- [x] Commit after each resource works: `feat: workspace CRUD`, `feat: page CRUD + tree`
 
 ### Midday Block: Blocks (Notion) + List/Card (Trello)
-- [ ] Block model + `POST/GET/PATCH/DELETE /blocks`
-- [ ] Block: `PATCH /blocks/reorder` — **wrap in a Mongo transaction**
-- [ ] List model + Card model (belongs to board-type Page)
-- [ ] List/Card CRUD endpoints
-- [ ] **Card move endpoint** (`PATCH /cards/:id/move`): transaction that updates card's listId + position, AND writes an AuditLog entry, atomically
-- [ ] Wire Socket.io: emit `card:moved` and `block:updated` on these actions
-- [ ] Commit: `feat: blocks CRUD`, `feat: list+card CRUD`, `feat: card move transaction + socket emit`
+- [x] Block model + `POST/GET/PATCH/DELETE /blocks`
+- [x] Block: `PATCH /blocks/reorder` — **wrap in a Mongo transaction**
+- [x] List model + Card model (belongs to board-type Page)
+- [x] List/Card CRUD endpoints
+- [x] **Card move endpoint** (`PATCH /cards/:id/move`): transaction that updates card's listId + position, AND writes an AuditLog entry, atomically
+- [x] Wire Socket.io: emit `card:moved` and `block:updated` on these actions
+- [x] Commit: `feat: blocks CRUD`, `feat: list+card CRUD`, `feat: card move transaction + socket emit`
 
 ### Afternoon Block: Messages (Slack) + Comments
-- [ ] Message model (channel-type Page)
-- [ ] `POST /pages/:id/messages`, `GET /pages/:id/messages?cursor=` (pagination for infinite scroll)
-- [ ] Socket.io: `channel:message` event, join/leave room per workspace or page
-- [ ] Comment model (attachable to Page/Block/Card via polymorphic ref)
-- [ ] Comment CRUD + `GET /comments?targetId=`
-- [ ] Commit: `feat: messages + realtime channel`, `feat: threaded comments`
+- [x] Message model (channel-type Page)
+- [x] `POST /pages/:id/messages`, `GET /pages/:id/messages?cursor=` (pagination for infinite scroll)
+- [x] Socket.io: `channel:message` event, join/leave room per workspace or page
+- [x] Comment model (attachable to Page/Block/Card via polymorphic ref)
+- [x] Comment CRUD + `GET /comments?targetId=`
+- [x] Commit: `feat: messages + realtime channel`, `feat: threaded comments`
 
 ### Evening Block: Supporting Systems
-- [ ] AuditLog: `GET /audit-logs?workspaceId=&page=` (paginated)
-- [ ] Search: text index on Page/Block/Card/Message, `GET /search?q=&workspaceId=`
-- [ ] Attachments: `POST /attachments` (multer upload), `DELETE /attachments/:id`, link to Block/Card
-- [ ] Aggregation endpoint: `GET /workspaces/:id/stats` (cards per list, messages/day, blocks by type — use `$facet`)
-- [ ] Redis: cache `GET /pages/tree` and `GET /pages/:id`, invalidate on any write to that workspace
-- [ ] BullMQ: one job — `weekly-digest` (queue + worker, just needs to log/write a DigestLog doc)
-- [ ] Swagger: annotate all routes so far, confirm `/api-docs` renders
-- [ ] Commit after each: keep commits granular (`feat: audit logs`, `feat: search endpoint`, `feat: redis caching on page reads`, `feat: bullmq digest job`, `docs: swagger annotations`)
+- [x] AuditLog: `GET /audit-logs?workspaceId=&page=` (paginated)
+- [x] Search: text index on Page/Block/Card/Message, `GET /search?q=&workspaceId=`
+- [x] Attachments: `POST /attachments` (multer upload), `DELETE /attachments/:id`, link to Block/Card
+- [x] Aggregation endpoint: `GET /workspaces/:id/stats` (cards per list, messages/day, blocks by type — use `$facet`)
+- [x] Redis: cache `GET /pages/tree` and `GET /pages/:id`, invalidate on any write to that workspace
+- [x] BullMQ: one job — `weekly-digest` (queue + worker, just needs to log/write a DigestLog doc)
+- [x] Swagger: annotate all routes so far, confirm `/api-docs` renders
+- [x] Commit after each: keep commits granular (`feat: audit logs`, `feat: search endpoint`, `feat: redis caching on page reads`, `feat: bullmq digest job`, `docs: swagger annotations`)
 
 **✅ Definition of Done (Day 1):** Every endpoint listed above returns correct data in Postman/Swagger UI. Card-move transaction and Redis cache are demonstrably working (check Mongo/Redis directly if needed). Endpoint count is 35+.
 

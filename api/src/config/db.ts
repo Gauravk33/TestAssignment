@@ -8,9 +8,9 @@ export async function connectDB(): Promise<typeof mongoose> {
     // Attempt standard connection to configured MONGO_URI
     console.log(`[DB] Attempting connection to MongoDB at: ${env.MONGO_URI.replace(/\/\/.*@/, '//<credentials>@')}`);
     
-    // Set connection timeout to 4 seconds so fallback triggers quickly if local instance is absent
+    // Set connection timeout to 15 seconds for Atlas connections
     const conn = await mongoose.connect(env.MONGO_URI, {
-      serverSelectionTimeoutMS: 4000,
+      serverSelectionTimeoutMS: 15000,
     });
     
     console.log(`[DB] Successfully connected to MongoDB (${conn.connection.host}/${conn.connection.name})`);

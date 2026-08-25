@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: teamspace-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-5000}:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=development
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/teamspace}
+      - REDIS_URI=${REDIS_URI:-redis://redis:6379}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-supersecret_access_key_change_in_production}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-supersecret_refresh_key_change_in_production}
+      - JWT_ACCESS_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    networks:
+      - teamspace-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: teamspace-client
+    restart: unless-stopped
+    ports:
+      - "${CLIENT_PORT:-3000}:3000"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api}
+    depends_on:
+      - api
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - teamspace-network
+
+  mongo:
+    image: mongo:7.0
+    container_name: teamspace-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - teamspace-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: teamspace-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - teamspace-network
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  teamspace-network:
+    driver: bridge

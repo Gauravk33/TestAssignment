@@ -31,6 +31,19 @@
   --radius-xl: 24px;
 }
 
+.light {
+  --bg-main: #f8fafc;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(241, 245, 249, 0.9);
+  --bg-input: rgba(241, 245, 249, 0.9);
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-focus: rgba(99, 102, 241, 0.5);
+  --text-main: #1e293b;
+  --text-muted: #475569;
+  --text-dim: #94a3b8;
+  --primary-glow: rgba(99, 102, 241, 0.2);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

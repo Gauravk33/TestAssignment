@@ -238,13 +238,31 @@ export const BoardView: React.FC<BoardViewProps> = ({ pageId, pageTitle }) => {
     fetchBoard(pageId);
 
     const socket = getSocket();
-    const handler = (data: any) => {
-      if (data.card?.pageId === pageId) {
+    const handleSync = (data: any) => {
+      const targetPageId = (data?.card?.pageId || data?.list?.pageId || data?.pageId)?.toString();
+      if (!targetPageId || targetPageId === pageId.toString()) {
+        console.log('[Socket] Board update received, syncing board state...');
         fetchBoard(pageId);
       }
     };
-    socket.on('card:moved', handler);
-    return () => { socket.off('card:moved', handler); };
+
+    socket.on('card:moved', handleSync);
+    socket.on('card:created', handleSync);
+    socket.on('card:updated', handleSync);
+    socket.on('card:deleted', handleSync);
+    socket.on('list:created', handleSync);
+    socket.on('list:updated', handleSync);
+    socket.on('list:deleted', handleSync);
+
+    return () => {
+      socket.off('card:moved', handleSync);
+      socket.off('card:created', handleSync);
+      socket.off('card:updated', handleSync);
+      socket.off('card:deleted', handleSync);
+      socket.off('list:created', handleSync);
+      socket.off('list:updated', handleSync);
+      socket.off('list:deleted', handleSync);
+    };
   }, [pageId]);
 
   // Find which list a card or droppable belongs to

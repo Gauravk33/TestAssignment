@@ -164,15 +164,26 @@ export const DocView: React.FC<DocViewProps> = ({ pageId, pageTitle }) => {
   useEffect(() => {
     fetchBlocks(pageId);
 
-    // Socket.io: listen for block:updated from other users
+    // Socket.io: listen for block real-time events from other users
     const socket = getSocket();
-    const handler = (data: any) => {
-      if (data.block?.pageId === pageId) {
-        updateBlockLocal(data.block._id || data.block.id, data.block.content);
+    const handleSync = (data: any) => {
+      const targetPageId = (data?.block?.pageId || data?.pageId)?.toString();
+      if (!targetPageId || targetPageId === pageId.toString()) {
+        fetchBlocks(pageId);
       }
     };
-    socket.on('block:updated', handler);
-    return () => { socket.off('block:updated', handler); };
+
+    socket.on('block:updated', handleSync);
+    socket.on('block:created', handleSync);
+    socket.on('block:deleted', handleSync);
+    socket.on('block:reordered', handleSync);
+
+    return () => {
+      socket.off('block:updated', handleSync);
+      socket.off('block:created', handleSync);
+      socket.off('block:deleted', handleSync);
+      socket.off('block:reordered', handleSync);
+    };
   }, [pageId]);
 
   const handleAddBlock = async (type: string) => {

@@ -9,11 +9,7 @@ export function initSocket(server: HttpServer): Server {
   io = new Server(server, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin || origin === env.CLIENT_URL || origin.startsWith('http://localhost')) {
-          callback(null, true);
-        } else {
-          callback(null, true);
-        }
+        callback(null, true);
       },
       credentials: true,
     },
@@ -43,29 +39,38 @@ export function initSocket(server: HttpServer): Server {
     const user = (socket as any).user;
     console.log(`[Socket] User connected: ${user?.name || socket.id} (${socket.id})`);
 
-    // Join Workspace Room
-    socket.on('workspace:join', (workspaceId: string) => {
+    const handleJoinWorkspace = (workspaceId: string) => {
       socket.join(`workspace:${workspaceId}`);
-      console.log(`[Socket] ${socket.id} joined workspace:${workspaceId}`);
-    });
+      console.log(`[Socket] ${socket.id} joined room workspace:${workspaceId}`);
+    };
 
-    // Leave Workspace Room
-    socket.on('workspace:leave', (workspaceId: string) => {
+    const handleLeaveWorkspace = (workspaceId: string) => {
       socket.leave(`workspace:${workspaceId}`);
-      console.log(`[Socket] ${socket.id} left workspace:${workspaceId}`);
-    });
+      console.log(`[Socket] ${socket.id} left room workspace:${workspaceId}`);
+    };
 
-    // Join Page Room
-    socket.on('page:join', (pageId: string) => {
+    const handleJoinPage = (pageId: string) => {
       socket.join(`page:${pageId}`);
-      console.log(`[Socket] ${socket.id} joined page:${pageId}`);
-    });
+      console.log(`[Socket] ${socket.id} joined room page:${pageId}`);
+    };
 
-    // Leave Page Room
-    socket.on('page:leave', (pageId: string) => {
+    const handleLeavePage = (pageId: string) => {
       socket.leave(`page:${pageId}`);
-      console.log(`[Socket] ${socket.id} left page:${pageId}`);
-    });
+      console.log(`[Socket] ${socket.id} left room page:${pageId}`);
+    };
+
+    // Support both event naming conventions
+    socket.on('workspace:join', handleJoinWorkspace);
+    socket.on('join:workspace', handleJoinWorkspace);
+
+    socket.on('workspace:leave', handleLeaveWorkspace);
+    socket.on('leave:workspace', handleLeaveWorkspace);
+
+    socket.on('page:join', handleJoinPage);
+    socket.on('join:page', handleJoinPage);
+
+    socket.on('page:leave', handleLeavePage);
+    socket.on('leave:page', handleLeavePage);
 
     socket.on('disconnect', () => {
       console.log(`[Socket] User disconnected: ${socket.id}`);
@@ -84,12 +89,14 @@ export function getIO(): Server {
 
 export function emitToWorkspace(workspaceId: string, event: string, data: any) {
   if (io) {
+    console.log(`[Socket] Emitting '${event}' to workspace:${workspaceId}`);
     io.to(`workspace:${workspaceId}`).emit(event, data);
   }
 }
 
 export function emitToPage(pageId: string, event: string, data: any) {
   if (io) {
+    console.log(`[Socket] Emitting '${event}' to page:${pageId}`);
     io.to(`page:${pageId}`).emit(event, data);
   }
 }

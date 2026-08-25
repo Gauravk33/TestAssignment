@@ -67,11 +67,12 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
     const socket = getSocket();
     const handler = (data: any) => {
       const msg = data.message || data;
-      if (msg.pageId === pageId) {
-        // Don't duplicate own messages
-        const userId = typeof msg.userId === 'object' ? msg.userId._id : msg.userId;
-        if (userId !== user?.id) {
+      const msgPageId = (msg.pageId?.toString() || msg.pageId);
+      if (!msgPageId || msgPageId === pageId.toString()) {
+        const msgUserId = typeof msg.userId === 'object' ? (msg.userId._id?.toString() || msg.userId.id?.toString()) : msg.userId?.toString();
+        if (msgUserId !== user?.id?.toString()) {
           appendMessageLocal(msg);
+          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
         }
       }
     };
@@ -237,3 +238,4 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ pageId, pageTitle }) =
     </div>
   );
 };
+

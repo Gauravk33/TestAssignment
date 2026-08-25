@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
+  closestCenter,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -21,20 +23,30 @@ import { getSocket } from '../lib/socket.js';
 
 /* ─── Sortable Card ──────────────────────────────── */
 const SortableCard: React.FC<{ card: Card }> = ({ card }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: card._id || card.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: card._id || card.id,
+    data: { type: 'card', card },
+  });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.3 : 1,
     padding: '10px 12px',
     marginBottom: '6px',
     borderRadius: '8px',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid var(--border-subtle)',
+    background: isDragging ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.04)',
+    border: isDragging ? '1px solid rgba(99,102,241,0.4)' : '1px solid var(--border-subtle)',
     cursor: 'grab',
-    userSelect: 'none',
+    userSelect: 'none' as const,
+    touchAction: 'none',
   };
 
   return (
@@ -69,59 +81,74 @@ const SortableCard: React.FC<{ card: Card }> = ({ card }) => {
   );
 };
 
-/* ─── Board Column (List) ───────────────────────── */
+/* ─── Card overlay while dragging ──────────────── */
+const CardOverlay: React.FC<{ card: Card }> = ({ card }) => (
+  <div style={{
+    padding: '10px 12px', borderRadius: '8px',
+    background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.5)',
+    boxShadow: '0 12px 32px rgba(0,0,0,0.5)', width: '260px',
+    cursor: 'grabbing',
+  }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <GripVertical size={13} color="#a5b4fc" />
+      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>{card.title}</span>
+    </div>
+  </div>
+);
+
+/* ─── Droppable Board Column ───────────────────── */
 const BoardColumn: React.FC<{
   list: BoardList;
   cards: Card[];
   pageId: string;
-}> = ({ list, cards, pageId }) => {
+  isOver: boolean;
+}> = ({ list, cards, pageId, isOver }) => {
   const { createCard } = usePageStore();
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+
+  const listId = list._id || list.id;
+  const { setNodeRef } = useDroppable({ id: `list-${listId}`, data: { type: 'list', listId } });
 
   const sortedCards = [...cards].sort((a, b) => a.position - b.position);
   const cardIds = sortedCards.map(c => c._id || c.id);
 
   const handleAdd = async () => {
     if (!newTitle.trim()) return;
-    await createCard(pageId, list._id || list.id, newTitle.trim());
+    await createCard(pageId, listId, newTitle.trim());
     setNewTitle('');
     setShowAdd(false);
   };
 
   return (
     <div style={{
-      width: '280px',
-      minWidth: '280px',
-      background: 'rgba(255,255,255,0.02)',
+      width: '280px', minWidth: '280px',
+      background: isOver ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.02)',
       borderRadius: '10px',
-      border: '1px solid var(--border-subtle)',
-      display: 'flex',
-      flexDirection: 'column',
+      border: isOver ? '1px solid rgba(99,102,241,0.3)' : '1px solid var(--border-subtle)',
+      display: 'flex', flexDirection: 'column',
       maxHeight: '100%',
+      transition: 'all 0.2s',
     }}>
       {/* List header */}
       <div style={{
-        padding: '12px 14px',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        padding: '12px 14px', borderBottom: '1px solid var(--border-subtle)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>
-          {list.title}
-        </span>
+        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>{list.title}</span>
         <span style={{
           fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-dim)',
-          background: 'rgba(255,255,255,0.06)', padding: '1px 7px',
-          borderRadius: '999px',
+          background: 'rgba(255,255,255,0.06)', padding: '1px 7px', borderRadius: '999px',
         }}>
           {cards.length}
         </span>
       </div>
 
-      {/* Cards */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+      {/* Cards — droppable zone */}
+      <div ref={setNodeRef} style={{
+        flex: 1, overflowY: 'auto', padding: '8px',
+        minHeight: '60px',
+      }}>
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
           {sortedCards.map(card => (
             <SortableCard key={card._id || card.id} card={card} />
@@ -129,8 +156,12 @@ const BoardColumn: React.FC<{
         </SortableContext>
 
         {sortedCards.length === 0 && (
-          <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
-            No cards
+          <div style={{
+            padding: '20px 16px', textAlign: 'center', color: 'var(--text-dim)',
+            fontSize: '0.8rem', border: '1px dashed var(--border-subtle)',
+            borderRadius: '8px', background: 'rgba(255,255,255,0.01)',
+          }}>
+            Drop cards here
           </div>
         )}
       </div>
@@ -143,7 +174,7 @@ const BoardColumn: React.FC<{
               autoFocus
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+              onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') { setShowAdd(false); setNewTitle(''); } }}
               placeholder="Card title..."
               style={{
                 width: '100%', padding: '7px 10px', borderRadius: '6px',
@@ -153,38 +184,25 @@ const BoardColumn: React.FC<{
               }}
             />
             <div style={{ display: 'flex', gap: '6px' }}>
-              <button
-                onClick={handleAdd}
-                style={{
-                  flex: 1, padding: '5px', borderRadius: '6px',
-                  background: 'rgba(99,102,241,0.6)', border: 'none',
-                  color: '#fff', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-                }}
-              >
-                Add
-              </button>
-              <button
-                onClick={() => { setShowAdd(false); setNewTitle(''); }}
-                style={{
-                  padding: '5px 10px', borderRadius: '6px',
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-dim)', fontSize: '0.78rem', cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
+              <button onClick={handleAdd} style={{
+                flex: 1, padding: '5px', borderRadius: '6px',
+                background: 'rgba(99,102,241,0.6)', border: 'none',
+                color: '#fff', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+              }}>Add</button>
+              <button onClick={() => { setShowAdd(false); setNewTitle(''); }} style={{
+                padding: '5px 10px', borderRadius: '6px',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-subtle)',
+                color: 'var(--text-dim)', fontSize: '0.78rem', cursor: 'pointer',
+              }}>Cancel</button>
             </div>
           </div>
         ) : (
-          <button
-            onClick={() => setShowAdd(true)}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '6px 10px', borderRadius: '6px',
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--text-dim)', fontSize: '0.82rem',
-            }}
-          >
+          <button onClick={() => setShowAdd(true)} style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 10px', borderRadius: '6px',
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-dim)', fontSize: '0.82rem',
+          }}>
             <Plus size={13} /> Add card
           </button>
         )}
@@ -200,10 +218,17 @@ interface BoardViewProps {
 }
 
 export const BoardView: React.FC<BoardViewProps> = ({ pageId, pageTitle }) => {
-  const { lists, cards, isLoadingBoard, fetchBoard, moveCard, moveCardLocal, rollbackCards, createList } = usePageStore();
+  const { lists, cards, isLoadingBoard, fetchBoard, moveCard, createList } = usePageStore();
   const [activeCard, setActiveCard] = useState<Card | null>(null);
+  const [localCards, setLocalCards] = useState<Card[]>([]);
   const [showAddList, setShowAddList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
+  const [overListId, setOverListId] = useState<string | null>(null);
+
+  // Sync localCards with store
+  useEffect(() => {
+    setLocalCards(cards);
+  }, [cards]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -212,44 +237,100 @@ export const BoardView: React.FC<BoardViewProps> = ({ pageId, pageTitle }) => {
   useEffect(() => {
     fetchBoard(pageId);
 
-    // Socket.io: listen for card:moved from other users
     const socket = getSocket();
     const handler = (data: any) => {
       if (data.card?.pageId === pageId) {
-        fetchBoard(pageId); // re-fetch to sync
+        fetchBoard(pageId);
       }
     };
     socket.on('card:moved', handler);
     return () => { socket.off('card:moved', handler); };
   }, [pageId]);
 
+  // Find which list a card or droppable belongs to
+  const findListId = (id: string): string | null => {
+    // Check if it's a list droppable
+    if (id.startsWith('list-')) return id.replace('list-', '');
+    // Check if it's a card
+    const card = localCards.find(c => (c._id || c.id) === id);
+    return card ? card.listId : null;
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
-    const card = cards.find(c => (c._id || c.id) === event.active.id);
+    const card = localCards.find(c => (c._id || c.id) === event.active.id);
     setActiveCard(card || null);
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    setActiveCard(null);
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over) { setOverListId(null); return; }
 
-    const draggedCard = cards.find(c => (c._id || c.id) === active.id);
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeListId = findListId(activeId);
+    const overListId = findListId(overId);
+
+    if (!activeListId || !overListId || activeListId === overListId) {
+      setOverListId(overListId);
+      return;
+    }
+
+    setOverListId(overListId);
+
+    // Move card to new list in local state (live preview)
+    setLocalCards(prev => prev.map(c =>
+      (c._id || c.id) === activeId
+        ? { ...c, listId: overListId }
+        : c
+    ));
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveCard(null);
+    setOverListId(null);
+
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const draggedCard = localCards.find(c => (c._id || c.id) === activeId);
     if (!draggedCard) return;
 
-    // Find which list the card was dropped over
-    const overCard = cards.find(c => (c._id || c.id) === over.id);
-    const targetListId = overCard ? overCard.listId : draggedCard.listId;
-    const targetPosition = overCard ? overCard.position : 0;
+    const targetListId = findListId(over.id as string);
+    if (!targetListId) return;
 
-    // Optimistic update
-    const prevCards = [...cards];
-    moveCardLocal(draggedCard._id || draggedCard.id, targetListId, targetPosition);
+    // Calculate target position
+    const targetListCards = localCards
+      .filter(c => c.listId === targetListId && (c._id || c.id) !== activeId)
+      .sort((a, b) => a.position - b.position);
+
+    let targetPosition = 0;
+    const overCard = localCards.find(c => (c._id || c.id) === (over.id as string));
+    if (overCard && (overCard._id || overCard.id) !== activeId) {
+      const overIndex = targetListCards.findIndex(c => (c._id || c.id) === (over.id as string));
+      targetPosition = overIndex >= 0 ? overIndex : targetListCards.length;
+    } else {
+      targetPosition = targetListCards.length;
+    }
+
+    // Save snapshot for rollback
+    const prevCards = [...localCards];
+
+    // Optimistic: update local position
+    setLocalCards(prev => prev.map(c =>
+      (c._id || c.id) === activeId
+        ? { ...c, listId: targetListId, position: targetPosition }
+        : c
+    ));
 
     try {
-      await moveCard(draggedCard._id || draggedCard.id, targetListId, targetPosition);
+      await moveCard(activeId, targetListId, targetPosition);
+      // Re-fetch to get authoritative state
+      await fetchBoard(pageId);
     } catch {
       // Rollback on failure
-      rollbackCards(prevCards);
+      setLocalCards(prevCards);
     }
   };
 
@@ -290,31 +371,26 @@ export const BoardView: React.FC<BoardViewProps> = ({ pageId, pageTitle }) => {
       }}>
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={closestCenter}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {sortedLists.map(list => (
-            <BoardColumn
-              key={list._id || list.id}
-              list={list}
-              cards={cards.filter(c => c.listId === (list._id || list.id))}
-              pageId={pageId}
-            />
-          ))}
+          {sortedLists.map(list => {
+            const lid = list._id || list.id;
+            return (
+              <BoardColumn
+                key={lid}
+                list={list}
+                cards={localCards.filter(c => c.listId === lid)}
+                pageId={pageId}
+                isOver={overListId === lid}
+              />
+            );
+          })}
 
-          <DragOverlay>
-            {activeCard && (
-              <div style={{
-                padding: '10px 12px', borderRadius: '8px',
-                background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.4)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.4)', width: '260px',
-              }}>
-                <div style={{ fontSize: '0.88rem', fontWeight: 500, color: '#fff' }}>
-                  {activeCard.title}
-                </div>
-              </div>
-            )}
+          <DragOverlay dropAnimation={null}>
+            {activeCard && <CardOverlay card={activeCard} />}
           </DragOverlay>
         </DndContext>
 
@@ -328,7 +404,7 @@ export const BoardView: React.FC<BoardViewProps> = ({ pageId, pageTitle }) => {
               autoFocus
               value={newListTitle}
               onChange={e => setNewListTitle(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAddList()}
+              onKeyDown={e => { if (e.key === 'Enter') handleAddList(); if (e.key === 'Escape') setShowAddList(false); }}
               placeholder="List title..."
               style={{
                 width: '100%', padding: '7px 10px', borderRadius: '6px',
@@ -338,38 +414,25 @@ export const BoardView: React.FC<BoardViewProps> = ({ pageId, pageTitle }) => {
               }}
             />
             <div style={{ display: 'flex', gap: '6px' }}>
-              <button
-                onClick={handleAddList}
-                style={{
-                  flex: 1, padding: '6px', borderRadius: '6px',
-                  background: 'rgba(99,102,241,0.6)', border: 'none',
-                  color: '#fff', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
-                }}
-              >
-                Add List
-              </button>
-              <button
-                onClick={() => setShowAddList(false)}
-                style={{
-                  padding: '6px 12px', borderRadius: '6px',
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-dim)', fontSize: '0.82rem', cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
+              <button onClick={handleAddList} style={{
+                flex: 1, padding: '6px', borderRadius: '6px',
+                background: 'rgba(99,102,241,0.6)', border: 'none',
+                color: '#fff', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+              }}>Add List</button>
+              <button onClick={() => setShowAddList(false)} style={{
+                padding: '6px 12px', borderRadius: '6px',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-subtle)',
+                color: 'var(--text-dim)', fontSize: '0.82rem', cursor: 'pointer',
+              }}>Cancel</button>
             </div>
           </div>
         ) : (
-          <button
-            onClick={() => setShowAddList(true)}
-            style={{
-              minWidth: '200px', padding: '12px 16px', borderRadius: '10px',
-              background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--border-subtle)',
-              color: 'var(--text-dim)', fontSize: '0.85rem', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '8px',
-            }}
-          >
+          <button onClick={() => setShowAddList(true)} style={{
+            minWidth: '200px', padding: '12px 16px', borderRadius: '10px',
+            background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--border-subtle)',
+            color: 'var(--text-dim)', fontSize: '0.85rem', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
             <Plus size={15} /> Add List
           </button>
         )}

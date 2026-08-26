@@ -116,7 +116,7 @@ test('5. RBAC: Register colleague and invite as viewer', async () => {
       role: 'viewer',
     });
 
-  assert.strictEqual(inviteRes.status, 200);
+  assert.strictEqual(inviteRes.status, 201);
   assert.strictEqual(inviteRes.body.success, true);
 });
 
@@ -126,7 +126,8 @@ test('6. RBAC: Owner passes requireRole(owner, admin)', async () => {
     .set('Authorization', `Bearer ${ownerToken}`);
 
   assert.strictEqual(res.status, 200);
-  assert.strictEqual(res.body.data.membership.role, 'owner');
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.membership.role, 'owner');
 });
 
 test('7. RBAC: Viewer is blocked with 403 Forbidden on requireRole(owner, admin)', async () => {

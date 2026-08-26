@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText, Trello, MessageSquare, ChevronRight, ChevronDown,
-  Plus, Trash2, Loader, Users, PlusCircle,
+  Plus, Trash2, Loader, Users,
 } from 'lucide-react';
 import { usePageStore, Page } from '../store/pageStore.js';
 import { useAuthStore } from '../store/authStore.js';
@@ -156,7 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
     const ws = workspaces.find((w) => w.id === targetWorkspaceId);
     if (ws) {
       setCurrentWorkspace(ws);
-      setActivePage(null as any); // Clear previous active page so view resets cleanly
+      setActivePage(null as any);
       navigate(`/workspace/${ws.id}`);
     }
   };
@@ -202,15 +202,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
       overflow: 'hidden',
       transition: 'background 0.2s ease',
     }}>
-      {/* Workspace Switcher & Creator */}
-      <div style={{ padding: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
+      {/* Workspace Switcher Header */}
+      <div style={{ padding: '12px 10px', borderBottom: '1px solid var(--border-subtle)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <select
             value={workspaceId || currentWorkspace?.id || ''}
             onChange={(e) => handleWorkspaceChange(e.target.value)}
             style={{
               flex: 1,
-              padding: '6px 8px',
+              minWidth: 0,
+              padding: '7px 8px',
               borderRadius: '6px',
               background: 'var(--bg-card)',
               border: '1px solid var(--border-subtle)',
@@ -219,6 +220,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
               fontWeight: 600,
               cursor: 'pointer',
               outline: 'none',
+              textOverflow: 'ellipsis',
             }}
           >
             {workspaces.map((ws) => (
@@ -227,26 +229,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
               </option>
             ))}
             <option value="__create_new__" style={{ background: 'var(--bg-dropdown)', color: 'var(--primary)', fontWeight: 700 }}>
-              + Create New Workspace...
+              + New Workspace...
             </option>
           </select>
 
+          {/* Prominent, high-contrast Add Workspace button */}
           <button
             onClick={() => setShowNewWorkspace((prev) => !prev)}
             title="Create new workspace"
             style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
+              width: '32px',
+              height: '32px',
+              minWidth: '32px',
+              background: showNewWorkspace ? 'var(--primary)' : 'var(--bg-card)',
+              border: '1px solid var(--border-active)',
               borderRadius: '6px',
-              padding: '6px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--text-dim)',
+              color: showNewWorkspace ? '#ffffff' : 'var(--primary)',
+              transition: 'all 0.15s ease',
             }}
           >
-            <PlusCircle size={15} />
+            <Plus size={16} strokeWidth={2.5} />
           </button>
         </div>
 
@@ -254,11 +260,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
         {showNewWorkspace && (
           <div style={{
             marginTop: '8px',
-            padding: '8px',
+            padding: '10px',
             background: 'var(--bg-card)',
             border: '1px solid var(--border-active)',
-            borderRadius: '6px',
+            borderRadius: '8px',
+            boxShadow: 'var(--shadow-card)',
           }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-heading)', marginBottom: '6px' }}>
+              New Workspace
+            </div>
             <input
               autoFocus
               value={newWorkspaceName}
@@ -267,32 +277,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
                 if (e.key === 'Enter') handleCreateWorkspace();
                 if (e.key === 'Escape') setShowNewWorkspace(false);
               }}
-              placeholder="Workspace name..."
+              placeholder="e.g. Design Team..."
               style={{
                 width: '100%',
-                padding: '5px 8px',
-                borderRadius: '4px',
+                padding: '6px 8px',
+                borderRadius: '5px',
                 background: 'var(--bg-input)',
                 border: '1px solid var(--border-subtle)',
                 color: 'var(--text-main)',
-                fontSize: '0.8rem',
-                marginBottom: '6px',
+                fontSize: '0.82rem',
+                marginBottom: '8px',
                 outline: 'none',
                 boxSizing: 'border-box',
               }}
             />
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
               <button
                 onClick={handleCreateWorkspace}
                 disabled={!newWorkspaceName.trim() || isCreatingWorkspace}
                 style={{
                   flex: 1,
-                  padding: '4px 8px',
-                  borderRadius: '4px',
+                  padding: '5px 8px',
+                  borderRadius: '5px',
                   background: 'var(--primary)',
                   border: 'none',
                   color: '#fff',
-                  fontSize: '0.75rem',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
@@ -302,12 +312,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
               <button
                 onClick={() => { setShowNewWorkspace(false); setNewWorkspaceName(''); }}
                 style={{
-                  padding: '4px 8px',
-                  borderRadius: '4px',
+                  padding: '5px 10px',
+                  borderRadius: '5px',
                   background: 'var(--bg-sidebar)',
                   border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-dim)',
-                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.78rem',
                   cursor: 'pointer',
                 }}
               >
@@ -324,25 +334,40 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '4px 8px 8px',
         }}>
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Pages
           </span>
           <button
             onClick={() => setShowNewPage((x) => !x)}
-            title="New page"
+            title="Create new page"
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--text-dim)', display: 'flex', alignItems: 'center',
-              padding: '2px', borderRadius: '4px',
+              width: '24px',
+              height: '24px',
+              background: showNewPage ? 'var(--primary)' : 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              color: showNewPage ? '#ffffff' : 'var(--text-main)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
             }}
           >
-            <Plus size={14} />
+            <Plus size={14} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* New page form */}
         {showNewPage && (
-          <div style={{ padding: '8px', marginBottom: '8px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+          <div style={{
+            padding: '10px',
+            marginBottom: '8px',
+            background: 'var(--bg-card)',
+            borderRadius: '8px',
+            border: '1px solid var(--border-active)',
+            boxShadow: 'var(--shadow-card)',
+          }}>
             <input
               autoFocus
               value={newPageTitle}
@@ -364,8 +389,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
                   style={{
                     flex: 1, padding: '4px', borderRadius: '6px', fontSize: '0.75rem',
                     cursor: 'pointer', fontWeight: newPageType === t ? 700 : 400,
-                    background: newPageType === t ? 'var(--bg-item-active)' : 'var(--bg-card)',
-                    border: newPageType === t ? '1px solid var(--border-active)' : '1px solid transparent',
+                    background: newPageType === t ? 'var(--bg-item-active)' : 'var(--bg-sidebar)',
+                    border: newPageType === t ? '1px solid var(--border-active)' : '1px solid var(--border-subtle)',
                     color: newPageType === t ? 'var(--primary)' : 'var(--text-dim)',
                   }}
                 >

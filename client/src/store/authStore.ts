@@ -15,6 +15,8 @@ interface AuthState {
   register: (payload: RegisterPayload) => Promise<string>; // returns default workspace ID
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  fetchWorkspaces: () => Promise<void>;
+  createWorkspace: (name: string, icon?: string) => Promise<WorkspaceSummary>;
   setCurrentWorkspace: (workspace: WorkspaceSummary) => void;
   clearError: () => void;
 }
@@ -99,6 +101,25 @@ export const useAuthStore = create<AuthState>((set, get) => {
         set({ error: msg, isLoading: false });
         throw new Error(msg);
       }
+    },
+
+    fetchWorkspaces: async () => {
+      try {
+        const res = await api.get('/workspaces');
+        const list = res.data.data || res.data || [];
+        set({ workspaces: list });
+      } catch (err) {
+        console.warn('Failed to fetch workspaces:', err);
+      }
+    },
+
+    createWorkspace: async (name: string, icon?: string) => {
+      const res = await api.post('/workspaces', { name, icon: icon || '⚡' });
+      const created = res.data.data || res.data;
+      const currentList = get().workspaces;
+      const updated = [...currentList, created];
+      set({ workspaces: updated, currentWorkspace: created });
+      return created;
     },
 
     logout: async () => {

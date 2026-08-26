@@ -31,7 +31,10 @@ export const WorkspacePage: React.FC = () => {
         setCurrentWorkspace(match);
       }
     }
-  }, [id, workspaces, setCurrentWorkspace]);
+    if (id && activePage && activePage.workspaceId && activePage.workspaceId !== id) {
+      usePageStore.getState().setActivePage(null as any);
+    }
+  }, [id, workspaces, setCurrentWorkspace, activePage]);
 
   // Connect Socket.io when workspace loads
   useEffect(() => {

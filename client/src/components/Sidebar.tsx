@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FileText, Trello, MessageSquare, ChevronRight, ChevronDown,
-  Plus, Trash2, Loader, Users,
+  Plus, Trash2, Loader, Users, PlusCircle,
 } from 'lucide-react';
 import { usePageStore, Page } from '../store/pageStore.js';
 import { useAuthStore } from '../store/authStore.js';
@@ -119,23 +120,62 @@ const PageTreeItem: React.FC<{
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
+  const navigate = useNavigate();
   const { pageTree, isLoadingTree, fetchPageTree, activePage, setActivePage, createPage, deletePage } = usePageStore();
-  const { workspaces, currentWorkspace, setCurrentWorkspace } = useAuthStore();
+  const { workspaces, currentWorkspace, setCurrentWorkspace, fetchWorkspaces, createWorkspace } = useAuthStore();
   const [showNewPage, setShowNewPage] = useState(false);
   const [newPageTitle, setNewPageTitle] = useState('');
   const [newPageType, setNewPageType] = useState<'doc' | 'board' | 'channel'>('doc');
   const [members, setMembers] = useState<any[]>([]);
   const [showMembers, setShowMembers] = useState(false);
 
-  useEffect(() => {
-    fetchPageTree(workspaceId);
-  }, [workspaceId]);
+  // New Workspace state
+  const [showNewWorkspace, setShowNewWorkspace] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
 
   useEffect(() => {
-    api.get(`/workspaces/${workspaceId}`)
-      .then((r) => setMembers(r.data?.data?.members || r.data?.members || []))
-      .catch(() => {});
-  }, [workspaceId]);
+    fetchWorkspaces();
+  }, [fetchWorkspaces]);
+
+  useEffect(() => {
+    if (workspaceId) {
+      fetchPageTree(workspaceId);
+      api.get(`/workspaces/${workspaceId}`)
+        .then((r) => setMembers(r.data?.data?.members || r.data?.members || []))
+        .catch(() => {});
+    }
+  }, [workspaceId, fetchPageTree]);
+
+  const handleWorkspaceChange = (targetWorkspaceId: string) => {
+    if (targetWorkspaceId === '__create_new__') {
+      setShowNewWorkspace(true);
+      return;
+    }
+
+    const ws = workspaces.find((w) => w.id === targetWorkspaceId);
+    if (ws) {
+      setCurrentWorkspace(ws);
+      setActivePage(null as any); // Clear previous active page so view resets cleanly
+      navigate(`/workspace/${ws.id}`);
+    }
+  };
+
+  const handleCreateWorkspace = async () => {
+    if (!newWorkspaceName.trim() || isCreatingWorkspace) return;
+    setIsCreatingWorkspace(true);
+    try {
+      const created = await createWorkspace(newWorkspaceName.trim());
+      setNewWorkspaceName('');
+      setShowNewWorkspace(false);
+      setActivePage(null as any);
+      navigate(`/workspace/${created.id}`);
+    } catch (err) {
+      console.error('Failed to create workspace:', err);
+    } finally {
+      setIsCreatingWorkspace(false);
+    }
+  };
 
   const handleCreatePage = async () => {
     if (!newPageTitle.trim()) return;
@@ -162,33 +202,120 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
       overflow: 'hidden',
       transition: 'background 0.2s ease',
     }}>
-      {/* Workspace Switcher */}
+      {/* Workspace Switcher & Creator */}
       <div style={{ padding: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-        <select
-          value={currentWorkspace?.id || ''}
-          onChange={(e) => {
-            const ws = workspaces.find((w) => w.id === e.target.value);
-            if (ws) setCurrentWorkspace(ws);
-          }}
-          style={{
-            width: '100%',
-            padding: '6px 8px',
-            borderRadius: '6px',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-subtle)',
-            color: 'var(--text-heading)',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            outline: 'none',
-          }}
-        >
-          {workspaces.map((ws) => (
-            <option key={ws.id} value={ws.id} style={{ background: 'var(--bg-dropdown)', color: 'var(--text-main)' }}>
-              {ws.icon ? `${ws.icon} ` : ''}{ws.name}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <select
+            value={workspaceId || currentWorkspace?.id || ''}
+            onChange={(e) => handleWorkspaceChange(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '6px 8px',
+              borderRadius: '6px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-heading)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            {workspaces.map((ws) => (
+              <option key={ws.id} value={ws.id} style={{ background: 'var(--bg-dropdown)', color: 'var(--text-main)' }}>
+                {ws.icon ? `${ws.icon} ` : '⚡ '}{ws.name}
+              </option>
+            ))}
+            <option value="__create_new__" style={{ background: 'var(--bg-dropdown)', color: 'var(--primary)', fontWeight: 700 }}>
+              + Create New Workspace...
             </option>
-          ))}
-        </select>
+          </select>
+
+          <button
+            onClick={() => setShowNewWorkspace((prev) => !prev)}
+            title="Create new workspace"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '6px',
+              padding: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-dim)',
+            }}
+          >
+            <PlusCircle size={15} />
+          </button>
+        </div>
+
+        {/* Quick Workspace Creation form */}
+        {showNewWorkspace && (
+          <div style={{
+            marginTop: '8px',
+            padding: '8px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-active)',
+            borderRadius: '6px',
+          }}>
+            <input
+              autoFocus
+              value={newWorkspaceName}
+              onChange={(e) => setNewWorkspaceName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateWorkspace();
+                if (e.key === 'Escape') setShowNewWorkspace(false);
+              }}
+              placeholder="Workspace name..."
+              style={{
+                width: '100%',
+                padding: '5px 8px',
+                borderRadius: '4px',
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-main)',
+                fontSize: '0.8rem',
+                marginBottom: '6px',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button
+                onClick={handleCreateWorkspace}
+                disabled={!newWorkspaceName.trim() || isCreatingWorkspace}
+                style={{
+                  flex: 1,
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  background: 'var(--primary)',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {isCreatingWorkspace ? 'Creating...' : 'Create'}
+              </button>
+              <button
+                onClick={() => { setShowNewWorkspace(false); setNewWorkspaceName(''); }}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  background: 'var(--bg-sidebar)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-dim)',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pages Section */}
@@ -265,7 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ workspaceId }) => {
           </div>
         ) : pageTree.length === 0 ? (
           <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.82rem' }}>
-            No pages yet. Click <strong>+</strong> to create one.
+            No pages yet in this workspace. Click <strong>+</strong> to create one.
           </div>
         ) : (
           <div>

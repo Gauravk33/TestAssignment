@@ -29,6 +29,8 @@ import { requireRole } from './middleware/requireRole.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 export const app = express();
+export const createApp = () => app;
+export default app;
 
 // Security & Parsing Middlewares
 app.use(

@@ -2,11 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert';
 import request from 'supertest';
 import mongoose from 'mongoose';
-import { createApp } from '../src/app.js';
+import { app } from '../src/app.js';
 import { connectDB } from '../src/config/db.js';
 import { initRedis, getRedisClient } from '../src/config/redis.js';
 
-let app: any;
 let ownerToken: string;
 let ownerUserId: string;
 let workspaceId: string;
@@ -20,7 +19,6 @@ let cardId: string;
 test.before(async () => {
   await connectDB();
   await initRedis();
-  app = createApp();
 });
 
 test.after(async () => {
@@ -128,7 +126,7 @@ test('6. RBAC: Owner passes requireRole(owner, admin)', async () => {
     .set('Authorization', `Bearer ${ownerToken}`);
 
   assert.strictEqual(res.status, 200);
-  assert.strictEqual(res.body.data.role, 'owner');
+  assert.strictEqual(res.body.data.membership.role, 'owner');
 });
 
 test('7. RBAC: Viewer is blocked with 403 Forbidden on requireRole(owner, admin)', async () => {

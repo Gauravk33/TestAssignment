@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import request from 'supertest';
-import { createApp } from '../src/app.js';
+import { app } from '../src/app.js';
 import { connectDB } from '../src/config/db.js';
 import { initRedis } from '../src/config/redis.js';
 
-let app: any;
 let token: string;
 let workspaceId: string;
 let boardPageId: string;
@@ -16,7 +15,6 @@ let cardId: string;
 test.before(async () => {
   await connectDB();
   await initRedis();
-  app = createApp();
 
   const regRes = await request(app).post('/api/auth/register').send({
     name: 'Transaction Tester',

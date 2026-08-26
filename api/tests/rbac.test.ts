@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import request from 'supertest';
-import { createApp } from '../src/app.js';
+import { app } from '../src/app.js';
 import { connectDB } from '../src/config/db.js';
 import { initRedis } from '../src/config/redis.js';
 
-let app: any;
 let ownerToken: string;
 let colleagueToken: string;
 let colleagueUserId: string;
@@ -14,7 +13,6 @@ let workspaceId: string;
 test.before(async () => {
   await connectDB();
   await initRedis();
-  app = createApp();
 
   // Create Owner
   const ownerRes = await request(app).post('/api/auth/register').send({
@@ -54,7 +52,7 @@ test('RBAC Suite - Owner passes requireRole(owner, admin) check', async () => {
 
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.body.success, true);
-  assert.strictEqual(res.body.data.role, 'owner');
+  assert.strictEqual(res.body.data.membership.role, 'owner');
 });
 
 test('RBAC Suite - Viewer fails requireRole(owner, admin) check with 403 Forbidden', async () => {

@@ -18,10 +18,13 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-supersecret_refresh_key_change_in_production}
       - JWT_ACCESS_EXPIRES_IN=15m
       - JWT_REFRESH_EXPIRES_IN=7d
-      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:5173}
+      - USE_MEMORY_DB_FALLBACK=true
     depends_on:
-      - mongo
-      - redis
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./api:/app
       - /app/node_modules
@@ -35,7 +38,7 @@ services:
     container_name: teamspace-client
     restart: unless-stopped
     ports:
-      - "${CLIENT_PORT:-3000}:3000"
+      - "${CLIENT_PORT:-5173}:5173"
     environment:
       - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api}
     depends_on:
@@ -54,6 +57,11 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - teamspace-network
 
@@ -65,6 +73,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - teamspace-network
 

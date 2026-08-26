@@ -9,12 +9,20 @@ import { ChannelView } from '../components/ChannelView.js';
 import { CommentsPanel } from '../components/CommentsPanel.js';
 import { ErrorBoundary } from '../components/ErrorBoundary.js';
 import { DarkModeToggle } from '../components/DarkModeToggle.js';
+import { SearchModal } from '../components/SearchModal.js';
+import { AnalyticsModal } from '../components/AnalyticsModal.js';
+import { AuditLogModal } from '../components/AuditLogModal.js';
+import { InviteModal } from '../components/InviteModal.js';
 import { connectSocket, disconnectSocket, joinWorkspace, joinPage } from '../lib/socket.js';
 import {
   Layers,
   LogOut,
   MessageCircle,
   WifiOff,
+  Search,
+  BarChart3,
+  ShieldCheck,
+  UserPlus,
 } from 'lucide-react';
 
 export const WorkspacePage: React.FC = () => {
@@ -23,6 +31,12 @@ export const WorkspacePage: React.FC = () => {
   const { user, workspaces, currentWorkspace, setCurrentWorkspace, logout, token } = useAuthStore();
   const { activePage, isOffline } = usePageStore();
   const [showComments, setShowComments] = useState(false);
+
+  // Modals
+  const [showSearch, setShowSearch] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAuditLogs, setShowAuditLogs] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
     if (id && workspaces.length > 0) {
@@ -78,7 +92,7 @@ export const WorkspacePage: React.FC = () => {
           <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>
             Select a page
           </h2>
-          <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', textAlign: 'center', maxWidth: '300px' }}>
+          <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', textAlign: 'center', maxWidth: '320px' }}>
             Choose a page from the sidebar, or create a new doc, board, or channel to get started.
           </p>
         </div>
@@ -124,10 +138,10 @@ export const WorkspacePage: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 20px',
+        padding: '0 16px',
         zIndex: 10,
       }}>
-        {/* Brand */}
+        {/* Brand & Workspace Name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -147,40 +161,88 @@ export const WorkspacePage: React.FC = () => {
           </span>
         </div>
 
-        {/* Page title indicator */}
-        {activePage && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'var(--bg-card)',
-            padding: '4px 12px', borderRadius: '6px',
-            border: '1px solid var(--border-subtle)',
-          }}>
-            <span style={{ fontSize: '0.8rem' }}>
-              {activePage.icon || (activePage.type === 'doc' ? '📝' : activePage.type === 'board' ? '📋' : '💬')}
-            </span>
-            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-main)' }}>
-              {activePage.title}
-            </span>
-            <span style={{
-              fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase',
-              padding: '1px 6px', borderRadius: '4px',
-              background: activePage.type === 'doc' ? 'rgba(99,102,241,0.15)' : activePage.type === 'board' ? 'rgba(6,182,212,0.15)' : 'rgba(168,85,247,0.15)',
-              color: activePage.type === 'doc' ? '#6366f1' : activePage.type === 'board' ? '#0891b2' : '#9333ea',
-            }}>
-              {activePage.type}
-            </span>
+        {/* Global Search Bar (Ctrl+K) */}
+        <button
+          onClick={() => setShowSearch(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+            padding: '5px 14px', borderRadius: '8px', cursor: 'pointer',
+            minWidth: '220px', justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-dim)', fontSize: '0.82rem' }}>
+            <Search size={14} />
+            <span>Search workspace...</span>
           </div>
-        )}
+          <kbd style={{
+            fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px',
+            background: 'var(--bg-sidebar)', color: 'var(--text-dim)',
+            border: '1px solid var(--border-subtle)', fontFamily: 'var(--font-mono)',
+          }}>
+            Ctrl K
+          </kbd>
+        </button>
 
-        {/* User + actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Power Tools Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Analytics Modal Button */}
+          <button
+            onClick={() => setShowAnalytics(true)}
+            title="Workspace Analytics ($facet)"
+            style={{
+              padding: '6px 10px', borderRadius: '7px',
+              border: '1px solid var(--border-subtle)',
+              background: 'var(--bg-card)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              color: 'var(--text-heading)', fontSize: '0.8rem', fontWeight: 500,
+            }}
+          >
+            <BarChart3 size={14} color="var(--primary)" />
+            <span>Analytics</span>
+          </button>
+
+          {/* Audit Logs Modal Button */}
+          <button
+            onClick={() => setShowAuditLogs(true)}
+            title="Audit Trail Logs"
+            style={{
+              padding: '6px 10px', borderRadius: '7px',
+              border: '1px solid var(--border-subtle)',
+              background: 'var(--bg-card)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              color: 'var(--text-heading)', fontSize: '0.8rem', fontWeight: 500,
+            }}
+          >
+            <ShieldCheck size={14} color="var(--accent-emerald)" />
+            <span>Audit</span>
+          </button>
+
+          {/* Invite Member Button */}
+          {(userRole === 'owner' || userRole === 'admin') && (
+            <button
+              onClick={() => setShowInvite(true)}
+              title="Invite Team Member (RBAC)"
+              style={{
+                padding: '6px 10px', borderRadius: '7px',
+                border: '1px solid var(--border-active)',
+                background: 'rgba(99, 102, 241, 0.1)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '5px',
+                color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600,
+              }}
+            >
+              <UserPlus size={14} />
+              <span>Invite</span>
+            </button>
+          )}
+
           {/* Comments toggle */}
           {activePage && (
             <button
               onClick={() => setShowComments((c) => !c)}
               title="Toggle comments"
               style={{
-                width: '34px', height: '34px', borderRadius: '8px',
+                width: '32px', height: '32px', borderRadius: '7px',
                 border: `1px solid ${showComments ? 'var(--border-active)' : 'var(--border-subtle)'}`,
                 background: showComments ? 'var(--bg-item-active)' : 'var(--bg-card)',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -193,33 +255,30 @@ export const WorkspacePage: React.FC = () => {
 
           <DarkModeToggle />
 
-          {/* User avatar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* User Profile */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '4px' }}>
             <div style={{
-              width: '30px', height: '30px', borderRadius: '50%',
+              width: '28px', height: '28px', borderRadius: '50%',
               background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 600, fontSize: '0.8rem', color: '#ffffff',
+              fontWeight: 600, fontSize: '0.75rem', color: '#ffffff',
             }}>
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-main)' }}>
-              {user?.name || 'User'}
-            </span>
           </div>
 
           <button
             onClick={handleLogout}
             title="Logout"
             style={{
-              width: '34px', height: '34px', borderRadius: '8px',
+              width: '32px', height: '32px', borderRadius: '7px',
               border: '1px solid var(--border-subtle)',
               background: 'var(--bg-card)',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'var(--text-muted)',
             }}
           >
-            <LogOut size={15} />
+            <LogOut size={14} />
           </button>
         </div>
       </header>
@@ -248,6 +307,31 @@ export const WorkspacePage: React.FC = () => {
           />
         )}
       </div>
+
+      {/* 4 Interactive Power Modals */}
+      <SearchModal
+        workspaceId={workspaceId}
+        isOpen={showSearch}
+        onClose={() => setShowSearch(false)}
+      />
+
+      <AnalyticsModal
+        workspaceId={workspaceId}
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+      />
+
+      <AuditLogModal
+        workspaceId={workspaceId}
+        isOpen={showAuditLogs}
+        onClose={() => setShowAuditLogs(false)}
+      />
+
+      <InviteModal
+        workspaceId={workspaceId}
+        isOpen={showInvite}
+        onClose={() => setShowInvite(false)}
+      />
     </div>
   );
 };
